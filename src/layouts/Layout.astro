@@ -7,7 +7,7 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="font-mono">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content="Astro description" />
@@ -22,3 +22,21 @@ const { title } = Astro.props;
     <slot />
   </body>
 </html>
+
+<style is:global>
+  @font-face {
+    font-family: "JetBrainsMono";
+    src: url("@/static/fonts/jetbrains/var-jetbrainsmono.ttf");
+    font-weight: 100 800;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "JetBrainsMono";
+    src: url("@/static/fonts/jetbrains/var-jetbrainsmono-italic.ttf");
+    font-weight: 100 800;
+    font-style: italic;
+    font-display: swap;
+  }
+</style>
