@@ -4,13 +4,29 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout title="exectx.run">
   <div
-    class="mx-auto flex h-screen max-w-prose items-center justify-center px-4"
+    class="mx-3 h-14 border-l border-r border-dashed border-blue-200 md:mx-12"
   >
-    <main>
-      <p>
-        Hi! I'm a software developer. I usually do web development. I also enjoy
-        building products and challenging myself.
-      </p>
-    </main>
+  </div>
+  <div
+    class="h-[calc(100vh-(56px*2))] border-b border-t border-dashed border-blue-200"
+  >
+    <div
+      class="mx-3 h-full border-l border-r border-dashed border-blue-200 md:mx-12"
+    >
+      <div
+        class="mx-auto flex h-full max-w-prose items-center justify-center px-4"
+      >
+        <main>
+          <p class="text-sm font-light text-gray-600">
+            Hi! I'm a software developer. I usually do web development. I also
+            enjoy building products and challenging myself.
+          </p>
+        </main>
+      </div>
+    </div>
+  </div>
+  <div
+    class="mx-3 h-14 border-l border-r border-dashed border-blue-200 md:mx-12"
+  >
   </div>
 </Layout>
