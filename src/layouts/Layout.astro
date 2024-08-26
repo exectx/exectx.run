@@ -4,6 +4,7 @@ interface Props {
 }
 
 const { title } = Astro.props;
+import PostHog from "@/components/posthog.astro";
 ---
 
 <!doctype html>
@@ -17,6 +18,7 @@ const { title } = Astro.props;
     <meta name="description" content={"I'm a web developer"} />
     <meta name="og:description" content={"I'm a web developer"} />
     <title>{title}</title>
+    {import.meta.env.PROD && <PostHog />}
   </head>
   <body>
     <slot />
@@ -26,7 +28,7 @@ const { title } = Astro.props;
 <style is:global>
   @font-face {
     font-family: "JetBrainsMono";
-    src: url("@/static/fonts/jetbrains/var-jetbrainsmono.ttf");
+    src: url("/fonts/jetbrains/var-jetbrainsmono.ttf");
     font-weight: 100 800;
     font-style: normal;
     font-display: swap;
@@ -34,7 +36,7 @@ const { title } = Astro.props;
 
   @font-face {
     font-family: "JetBrainsMono";
-    src: url("@/static/fonts/jetbrains/var-jetbrainsmono-italic.ttf");
+    src: url("/fonts/jetbrains/var-jetbrainsmono-italic.ttf");
     font-weight: 100 800;
     font-style: italic;
     font-display: swap;

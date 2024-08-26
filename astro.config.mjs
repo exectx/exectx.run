@@ -8,5 +8,13 @@ import cloudflare from "@astrojs/cloudflare";
 export default defineConfig({
   integrations: [tailwind(), solidJs()],
   output: "server",
-  adapter: cloudflare(),
+  adapter: cloudflare({
+    imageService: "passthrough",
+    platformProxy: { enabled: true, configPath: "wrangler.toml" },
+  }),
+  vite: {
+    ssr: {
+      external: ["node:async_hooks"],
+    },
+  },
 });

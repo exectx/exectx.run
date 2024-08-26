@@ -11,19 +11,19 @@
     "format": "prettier --write \"**/*.{astro,js,cjs,mjs,ts,tsx,md,json}\" --ignore-path .gitignore"
   },
   "dependencies": {
-    "@astrojs/check": "^0.8.2",
-    "@astrojs/cloudflare": "^11.0.1",
-    "@astrojs/solid-js": "^4.4.0",
+    "@astrojs/check": "^0.9.3",
+    "@astrojs/cloudflare": "^11.0.4",
+    "@astrojs/solid-js": "^4.4.1",
     "@astrojs/tailwind": "^5.1.0",
-    "astro": "^4.12.2",
-    "solid-js": "^1.8.18",
-    "tailwindcss": "^3.4.6",
-    "typescript": "^5.5.3"
+    "astro": "^4.14.5",
+    "solid-js": "^1.8.21",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-tailwindcss": "^0.6.5",
-    "wrangler": "^3.65.1"
+    "prettier-plugin-tailwindcss": "^0.6.6",
+    "wrangler": "^3.72.2"
   }
 }
