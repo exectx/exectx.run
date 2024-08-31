@@ -20,7 +20,7 @@ import PostHog from "@/components/posthog.astro";
     <title>{title}</title>
     {import.meta.env.PROD && <PostHog />}
   </head>
-  <body class="h-full">
+  <body class="h-full overflow-hidden">
     <slot />
   </body>
 </html>

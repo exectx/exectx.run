@@ -2,6 +2,116 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
+<script>
+  import PartySocket from "partysocket";
+
+  const ws = new PartySocket({
+    host: import.meta.env.PUBLIC_PARTYKIT_HOST, // or localhost:1999 in dev
+    room: "www",
+    // add an optional id to identify the client,
+    // if not provided, a random id will be generated
+    // note that the id needs to be unique per connection,
+    // not per user, so e.g. multiple devices or tabs need a different id
+    // id: "some-connection-id",
+
+    // optionally, specify the party to connect to.
+    // if not provided, will connect to the "main" party defined in partykit.json
+    party: "main",
+
+    // optionally, pass an object of query string parameters to add to the request
+    // query: async () => ({
+    //   token: await getAuthToken(),
+    // }),
+  });
+
+  const cursors = new Map<string, SVGSVGElement>();
+
+  type Message =
+    | { type: "move"; id: string; x: number; y: number }
+    | { type: "leave"; id: string };
+
+  ws.addEventListener("message", (ev) => {
+    console.log(ev.data);
+    const message = JSON.parse(ev.data) as Message;
+    if (message.type === "leave") {
+      const cursor = cursors.get(message.id);
+      if (cursor) {
+        cursor.remove();
+        cursors.delete(message.id);
+      }
+      return;
+    }
+    if (cursors.has(message.id)) {
+      const cursor = cursors.get(message.id)!;
+      const w = window.innerWidth,
+        h = window.innerHeight;
+      cursor.style.left = `${message.x * w}px`;
+      cursor.style.top = `${message.y * h}px`;
+    } else {
+      // const cursor = document.createElement("div");
+      const cursor = createCursorSvg();
+      cursor.style.position = "absolute";
+      // cursor.style.width = "10px";
+      // cursor.style.height = "10px";
+      // cursor.style.backgroundColor = "red";
+      // cursor.style.borderRadius = "50%";
+      cursor.style.left = `${message.x * window.innerWidth}px`;
+      cursor.style.top = `${message.y * window.innerHeight}px`;
+
+      cursors.set(message.id, cursor);
+    }
+  });
+
+  document.addEventListener(
+    "mousemove",
+    (ev) => {
+      const w = window.innerWidth,
+        h = window.innerHeight;
+      const x = ev.pageX / w,
+        y = ev.pageY / h;
+      console.log(`r-x: ${x}, r-y: ${y}`);
+      ws.send(JSON.stringify({ type: "move", id: ws.id, x, y }));
+    },
+    false,
+  );
+  function getRandomHexColor() {
+    const randomColor = Math.floor(Math.random() * 16777215).toString(16);
+    return `#${randomColor.padStart(6, "0")}`; // Pads with zeroes to ensure 6 characters
+  }
+
+  function createCursorSvg() {
+    // Create the SVG namespace URL
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const color = getRandomHexColor();
+
+    // Create the SVG element
+    const svg = document.createElementNS(svgNamespace, "svg");
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", color);
+    svg.setAttribute("stroke", color);
+
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+
+    // Create the path element
+    const path = document.createElementNS(svgNamespace, "path");
+    path.setAttribute(
+      "d",
+      "M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z",
+    );
+
+    // Append the path to the SVG
+    svg.appendChild(path);
+
+    // Append the SVG to the document (for example, to the body)
+    document.body.appendChild(svg);
+    return svg;
+  }
+</script>
+
 <Layout title="exectx.run">
   <div
     class="mx-3 h-14 border-l border-r border-dashed border-blue-200 md:mx-12"
