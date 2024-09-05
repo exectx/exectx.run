@@ -24,41 +24,124 @@ import Layout from "../layouts/Layout.astro";
     // }),
   });
 
-  const cursors = new Map<string, SVGSVGElement>();
+  const cursors = new Map<
+    string,
+    {
+      element: SVGSVGElement;
+      positions: Array<{ x: number; y: number; timestamp: number }>;
+      currentIndex: number;
+    }
+  >();
 
   type Message =
-    | { type: "move"; id: string; x: number; y: number }
+    | {
+        type: "move";
+        id: string;
+        positions: { x: number; y: number; timestamp: number }[];
+      }
     | { type: "leave"; id: string };
 
+  let lastSentTimestamp = 0;
+  const batchInterval = 80;
+  let positionBuffer: { x: number; y: number; timestamp: number }[] = [];
+
   ws.addEventListener("message", (ev) => {
-    console.log(ev.data);
     const message = JSON.parse(ev.data) as Message;
+    cancelAnimationFrame(animationFrame);
     if (message.type === "leave") {
       const cursor = cursors.get(message.id);
       if (cursor) {
-        cursor.remove();
+        cursor.element.remove();
         cursors.delete(message.id);
       }
       return;
     }
-    if (cursors.has(message.id)) {
-      const cursor = cursors.get(message.id)!;
-      const w = window.innerWidth,
-        h = window.innerHeight;
-      cursor.style.left = `${message.x * w}px`;
-      cursor.style.top = `${message.y * h}px`;
-    } else {
-      // const cursor = document.createElement("div");
-      const cursor = createCursorSvg();
-      cursor.style.position = "absolute";
-      // cursor.style.width = "10px";
-      // cursor.style.height = "10px";
-      // cursor.style.backgroundColor = "red";
-      // cursor.style.borderRadius = "50%";
-      cursor.style.left = `${message.x * window.innerWidth}px`;
-      cursor.style.top = `${message.y * window.innerHeight}px`;
 
-      cursors.set(message.id, cursor);
+    if (!cursors.has(message.id)) {
+      const cursorElement = createCursorSvg();
+
+      cursors.set(message.id, {
+        element: cursorElement,
+        positions: message.positions,
+        currentIndex: 0,
+      });
+    } else {
+      // const cursor = cursors.get(message.id)!;
+      // cursor.positions.push(...message.positions);
+      const cursor = cursors.get(message.id)!;
+      cursor.positions = message.positions;
+      cursor.currentIndex = 0;
+    }
+    animationFrame = requestAnimationFrame(moveCursorsFrame);
+  });
+
+  const MOVING_CURSOR_SPEED = 0.25; // 0 is stopped, 1 is full send
+  const MOVING_CURSOR_RADIUS = 100;
+  function moveCursorsFrame() {
+    // TODO: cursor interpolation
+    if (!cursors.size) {
+      console.log("no cursors");
+    }
+
+    const now = Date.now();
+    const k = 1000 / MOVING_CURSOR_SPEED;
+    const t = (now % k) / k;
+    const w = window.innerWidth,
+      h = window.innerHeight;
+
+    let finished = true;
+    for (const [key, value] of cursors) {
+      const idx = value.currentIndex;
+      const positions = value.positions;
+      const svgCursor = value.element;
+      const position = positions[idx];
+      if (idx === positions.length - 1) {
+        continue;
+      }
+
+      const x = 150 + Math.sin(t * Math.PI * 2) * MOVING_CURSOR_RADIUS;
+      const y = 150 + Math.cos(t * Math.PI * 2) * MOVING_CURSOR_RADIUS;
+      if (idx < positions.length - 1) {
+        finished = false;
+        value.currentIndex++;
+      }
+      svgCursor.style.transform = `translate(${position.x * w}px, ${position.y * h}px)`;
+    }
+    if (!finished) {
+      animationFrame = requestAnimationFrame(moveCursorsFrame);
+    }
+  }
+
+  const emitter = new EventTarget();
+  type WsEventData = {
+    id: string;
+    positions: Array<{ x: number; y: number; timestamp: number }>;
+  };
+  type WsEvent = CustomEvent<WsEventData>;
+
+  let animationFrame = -1;
+  emitter.addEventListener("ws", (ev) => {
+    const event = ev as WsEvent;
+    cancelAnimationFrame(animationFrame);
+    if (!cursors.has(event.detail.id)) {
+      const cursorElement = createCursorSvg();
+      cursors.set(event.detail.id, {
+        element: cursorElement,
+        positions: event.detail.positions,
+        currentIndex: 0,
+      });
+    } else {
+      const _cursor = cursors.get(event.detail.id)!;
+      _cursor.positions = event.detail.positions;
+      _cursor.currentIndex = 0;
+    }
+    animationFrame = requestAnimationFrame(moveCursorsFrame);
+  });
+
+  document.addEventListener("click", () => {
+    for (const [key, value] of cursors) {
+      console.log(key);
+      console.log(value);
     }
   });
 
@@ -69,45 +152,120 @@ import Layout from "../layouts/Layout.astro";
         h = window.innerHeight;
       const x = ev.pageX / w,
         y = ev.pageY / h;
-      console.log(`r-x: ${x}, r-y: ${y}`);
-      ws.send(JSON.stringify({ type: "move", id: ws.id, x, y }));
+
+      const now = Date.now();
+      positionBuffer.push({ x, y, timestamp: now });
+
+      if (now - lastSentTimestamp >= batchInterval) {
+        // const data = {
+        //   id: "foo",
+        //   positions: positionBuffer,
+        // } satisfies WsEventData;
+        // emitter.dispatchEvent(
+        //   new CustomEvent<WsEventData>("ws", {
+        //     detail: data,
+        //   }),
+        // );
+        ws.send(
+          JSON.stringify({
+            type: "move",
+            id: ws.id,
+            positions: positionBuffer,
+          }),
+        );
+        positionBuffer = [];
+        lastSentTimestamp = now;
+      }
     },
     false,
   );
+
   function getRandomHexColor() {
     const randomColor = Math.floor(Math.random() * 16777215).toString(16);
-    return `#${randomColor.padStart(6, "0")}`; // Pads with zeroes to ensure 6 characters
+    return `#${randomColor.padStart(6, "0")}`;
   }
 
   function createCursorSvg() {
-    // Create the SVG namespace URL
-    const svgNamespace = "http://www.w3.org/2000/svg";
     const color = getRandomHexColor();
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("height", "32");
+    svg.setAttribute("width", "32");
+    svg.setAttribute("viewBox", "0 0 32 32");
+    svg.setAttribute("xmlns", svgNS);
+    svg.style.color = "black";
 
-    // Create the SVG element
-    const svg = document.createElementNS(svgNamespace, "svg");
-    svg.setAttribute("width", "24");
-    svg.setAttribute("height", "24");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("fill", color);
-    svg.setAttribute("stroke", color);
+    // Create the defs element with a drop shadow filter
+    const defs = document.createElementNS(svgNS, "defs");
+    const filter = document.createElementNS(svgNS, "filter");
+    filter.setAttribute("id", "shadow");
+    filter.setAttribute("x", "-40%");
+    filter.setAttribute("y", "-40%");
+    filter.setAttribute("width", "180px");
+    filter.setAttribute("height", "180%");
+    filter.setAttribute("color-interpolation-filters", "sRGB");
 
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
+    const feDropShadow = document.createElementNS(svgNS, "feDropShadow");
+    feDropShadow.setAttribute("dx", "1");
+    feDropShadow.setAttribute("dy", "1");
+    feDropShadow.setAttribute("stdDeviation", "1.2");
+    feDropShadow.setAttribute("flood-opacity", ".5");
 
-    // Create the path element
-    const path = document.createElementNS(svgNamespace, "path");
-    path.setAttribute(
+    // Append drop shadow to filter and filter to defs
+    filter.appendChild(feDropShadow);
+    defs.appendChild(filter);
+    svg.appendChild(defs);
+
+    // Create the main group element
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("fill", "none");
+    g.setAttribute("transform", "rotate(0 16 16)");
+    g.setAttribute("filter", "url(#shadow)");
+
+    // Create the first path element
+    const path1 = document.createElementNS(svgNS, "path");
+    path1.setAttribute(
       "d",
-      "M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z",
+      "M12 24.4219V8.4069L23.591 20.0259H16.81l-.411.124z",
     );
+    path1.setAttribute("fill", "white");
 
-    // Append the path to the SVG
-    svg.appendChild(path);
+    // Create the second path element
+    const path2 = document.createElementNS(svgNS, "path");
+    path2.setAttribute(
+      "d",
+      "M21.0845 25.0962L17.4795 26.6312L12.7975 15.5422L16.4835 13.9892z",
+    );
+    path2.setAttribute("fill", "white");
 
-    // Append the SVG to the document (for example, to the body)
+    // Create the third path element
+    const path3 = document.createElementNS(svgNS, "path");
+    path3.setAttribute(
+      "d",
+      "M19.751 24.4155L17.907 25.1895L14.807 17.8155L16.648 17.04z",
+    );
+    path3.setAttribute("fill", color);
+
+    // Create the fourth path element
+    const path4 = document.createElementNS(svgNS, "path");
+    path4.setAttribute("d", "M13 10.814V22.002L15.969 19.136l.428-.139h4.768z");
+    path4.setAttribute("fill", color);
+
+    // Append all path elements to the group
+    g.appendChild(path1);
+    g.appendChild(path2);
+    g.appendChild(path3);
+    g.appendChild(path4);
+
+    // Append the group to the SVG
+    svg.appendChild(g);
+    svg.style.position = "absolute";
+    svg.style.top = "-12";
+    svg.style.left = "-12";
+    svg.style.transition = "all 0.1s linear";
+    svg.style.backgroundColor = "rgba(0, 255, 0, 0.5)";
     document.body.appendChild(svg);
+
     return svg;
   }
 </script>
