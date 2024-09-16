@@ -1,0 +1,17 @@
+---
+
+---
+
+<script is:inline>
+  const html = document.documentElement;
+  html.classList.remove("light", "dark");
+  let userTheme = localStorage.getItem("theme") || "light";
+  if (userTheme === "dark" || userTheme === "light") {
+    html.classList.add(userTheme);
+    html.style.colorScheme = userTheme;
+  } else {
+    html.classList.add("light");
+    html.style.colorScheme = "light";
+  }
+  document.documentElement.classList.add(userTheme);
+</script>
