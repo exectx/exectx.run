@@ -3,5 +3,5 @@ compatibility_flags = ["nodejs_compat_v2"]
 pages_build_output_dir = "dist"
 compatibility_date = "2024-07-18"
 
-[placement]
-mode = "smart"
+# [placement]
+# mode = "smart"
