@@ -1,0 +1,78 @@
+---
+import SunSvg from "@/assets/sun.svg";
+import MoonSvg from "@/assets/moon.svg";
+import LanguageSvg from "@/assets/language.svg";
+const links = [
+  {
+    title: "home",
+    url: "/",
+  },
+  {
+    title: "projects",
+    url: "/projects",
+  },
+  {
+    title: "blog",
+    url: "/posts",
+  },
+];
+---
+
+<script>
+  import { $ } from "@/lib/dom";
+  const themeButton = $("#theme-toggle") as HTMLButtonElement;
+
+  function getTheme() {
+    const userTheme = localStorage.getItem("theme");
+    const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    return [userTheme ?? osTheme, osTheme];
+  }
+
+  function toggleTheme() {
+    const [theme, osTheme] = getTheme();
+    const newTheme = theme === "dark" ? "light" : "dark";
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(newTheme);
+    if (newTheme === osTheme) {
+      localStorage.removeItem("theme");
+    } else {
+      localStorage.theme = newTheme;
+    }
+  }
+
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addEventListener("change", (e) => {
+      if (localStorage.getItem("theme")) return;
+      const updatedOsTheme = e.matches ? "dark" : "light";
+      document.documentElement.classList.remove("light", "dark");
+      document.documentElement.classList.add(updatedOsTheme);
+    });
+
+  themeButton.addEventListener("click", toggleTheme);
+</script>
+
+<header class="py-8 px-4 w-full max-w-[75ch] mx-auto flex justify-between">
+  <nav class="flex gap-5 h-8 items-center">
+    {
+      links.map((link) => (
+        <a href={link.url} class="underline hover:text-accent">
+          {link.title}
+        </a>
+      ))
+    }
+  </nav>
+  <div
+    class="flex gap-1 [&>button]:text-primary-foreground [&>button]:bg-primary"
+  >
+    <button class="size-8 flex items-center justify-center">
+      <LanguageSvg class="size-4" />
+    </button>
+    <button id="theme-toggle" class="size-8 flex items-center justify-center">
+      <SunSvg class="size-4 block dark:hidden" />
+      <MoonSvg class="size-4 dark:block hidden" />
+    </button>
+  </div>
+</header>

@@ -1,0 +1,361 @@
+---
+const digits3 = Array.from({ length: 3 }, (_, i) => i);
+const digits10 = Array.from({ length: 10 }, (_, i) => i);
+const digits6 = Array.from({ length: 6 }, (_, i) => i);
+const baseTransitionDuration = 800;
+---
+
+<script>
+  import { $ } from "@/lib/dom";
+  import { toGMT } from "@/lib/clock";
+
+  type TimeUnit = "hours" | "minutes" | "seconds";
+  type TimeDigits = Record<TimeUnit, { tens: number; ones: number }>;
+
+  type DigitElements = {
+    tens: HTMLElement;
+    ones: HTMLElement;
+  };
+
+  type ClockElements = {
+    hours: DigitElements;
+    minutes: DigitElements;
+    seconds: DigitElements;
+  };
+
+  const clockEl = {
+    hours: {
+      tens: $("[data-hours] [data-tens]")!,
+      ones: $("[data-hours] [data-ones]")!,
+    },
+    minutes: {
+      tens: $("[data-minutes] [data-tens]")!,
+      ones: $("[data-minutes] [data-ones]")!,
+    },
+    seconds: {
+      tens: $("[data-seconds] [data-tens]")!,
+      ones: $("[data-seconds] [data-ones]")!,
+    },
+  } satisfies ClockElements;
+
+  function getTimeDigits(date: Date): TimeDigits {
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    return {
+      hours: { tens: +hours[0], ones: +hours[1] },
+      minutes: { tens: +minutes[0], ones: +minutes[1] },
+      seconds: { tens: +seconds[0], ones: +seconds[1] },
+    };
+  }
+
+  function getCurrentValues(): TimeDigits {
+    return {
+      hours: {
+        tens: +clockEl.hours.tens.style.getPropertyValue("--val"),
+        ones: +clockEl.hours.ones.style.getPropertyValue("--val"),
+      },
+      minutes: {
+        tens: +clockEl.minutes.tens.style.getPropertyValue("--val"),
+        ones: +clockEl.minutes.ones.style.getPropertyValue("--val"),
+      },
+      seconds: {
+        tens: +clockEl.seconds.tens.style.getPropertyValue("--val"),
+        ones: +clockEl.seconds.ones.style.getPropertyValue("--val"),
+      },
+    };
+  }
+
+  function calculateDigitDiff(
+    realVal: number,
+    currentVal: number,
+    mod: number,
+  ) {
+    if (currentVal % mod === realVal) return 0;
+    return realVal === 0
+      ? mod - (currentVal % mod)
+      : realVal - (currentVal % mod);
+  }
+
+  function calculateDiff(real: TimeDigits, current: TimeDigits): TimeDigits {
+    return {
+      hours: {
+        tens: calculateDigitDiff(real.hours.tens, current.hours.tens, 3),
+        ones: calculateDigitDiff(real.hours.ones, current.hours.ones, 10),
+      },
+      minutes: {
+        tens: calculateDigitDiff(real.minutes.tens, current.minutes.tens, 6),
+        ones: calculateDigitDiff(real.minutes.ones, current.minutes.ones, 10),
+      },
+      seconds: {
+        tens: calculateDigitDiff(real.seconds.tens, current.seconds.tens, 6),
+        ones: calculateDigitDiff(real.seconds.ones, current.seconds.ones, 10),
+      },
+    };
+  }
+
+  function updateElement(
+    element: HTMLElement,
+    currentVal: number,
+    diffVal: number,
+  ) {
+    if (diffVal !== 0) {
+      element.style.setProperty("--val", `${currentVal + diffVal}`);
+    }
+  }
+
+  function updateDigits(diff: TimeDigits, current: TimeDigits) {
+    Object.entries(diff).forEach(([unit, diff]) => {
+      const unitElements = clockEl[unit as TimeUnit];
+      const currentValues = current[unit as TimeUnit];
+      updateElement(unitElements.tens, currentValues.tens, diff.tens);
+      updateElement(unitElements.ones, currentValues.ones, diff.ones);
+    });
+  }
+
+  function onEachSecond(date: Date) {
+    const realTime = getTimeDigits(date);
+    const currentTime = getCurrentValues();
+    const diff = calculateDiff(realTime, currentTime);
+    updateDigits(diff, currentTime);
+  }
+
+  function startClock() {
+    let prevSecond = 0;
+    setInterval(() => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      if (prevSecond !== seconds) {
+        onEachSecond(toGMT(now, -5));
+      }
+      prevSecond = seconds;
+    }, 100);
+  }
+
+  startClock();
+</script>
+
+<div class="relative inline-flex items-center">
+  <div
+    class="absolute pointer-events-none top-0 w-full h-2 bg-gradient-to-b from-background to-transparent z-10"
+  >
+  </div>
+  <div
+    class="absolute pointer-events-none bottom-0 w-full h-2 bg-gradient-to-t from-background to-transparent z-10"
+  >
+  </div>
+  <div
+    data-hours
+    class="relative grid grid-cols-2 [transition:grid-template-columns_0.25s_ease-in-out]"
+  >
+    <div
+      data-tens
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "120deg",
+        "--val": 0,
+      }}
+    >
+      <div data-filler aria-hidden="true" class="opacity-0 select-none">8</div>
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 5}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits3.map((digit) => (
+            <div
+              class="absolute top-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 120}deg) translateZ(15px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div
+      data-ones
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "36deg",
+        "--val": 0,
+      }}
+    >
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 4}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits10.map((digit) => (
+            <div
+              class="absolute top-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 36}deg) translateZ(35px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+  <div>:</div>
+  <div
+    data-minutes
+    class="relative grid grid-cols-2 [transition:grid-template-columns_0.25s_ease-in-out]"
+  >
+    <div
+      data-tens
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "60deg",
+        "--val": 0,
+      }}
+    >
+      <div data-filler aria-hidden="true" class="opacity-0 select-none">8</div>
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 3}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits6.map((digit) => (
+            <div
+              class="absolute top-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 60}deg) translateZ(20px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div
+      data-ones
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "36deg",
+        "--val": 0,
+      }}
+    >
+      <div data-filler aria-hidden="true" class="opacity-0 select-none">8</div>
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 2}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits10.map((digit) => (
+            <div
+              class="absolute top-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 36}deg) translateZ(35px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+  <div>:</div>
+  <div
+    data-seconds
+    class="relative grid grid-cols-2 [transition:grid-template-columns_0.25s_ease-in-out]"
+  >
+    <div
+      data-tens
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "60deg",
+        "--val": 0,
+      }}
+    >
+      <div data-filler aria-hidden="true" class="opacity-0 select-none">8</div>
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 1}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits6.map((digit) => (
+            <div
+              class="absolute top-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 60}deg) translateZ(20px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+    <div
+      data-ones
+      class="overflow-hidden relative [transition:opacity_0.25s_ease-in-out,width_0.25s_ease-in-out]"
+      style={{
+        "--angle": "36deg",
+        "--val": 0,
+      }}
+    >
+      <div data-filler aria-hidden="true" class="opacity-0 select-none">8</div>
+      <div
+        data-wheel
+        class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--val)*-1*var(--angle)))] transition-transform"
+        style={{
+          "transition-duration": `${baseTransitionDuration + 75 * 0}ms`,
+        }}
+      >
+        <div data-filler aria-hidden="true" class="opacity-0 select-none">
+          8
+        </div>
+        {
+          digits10.map((digit) => (
+            <div
+              class="absolute top-0 inset-0 [backface-visibility:hidden] [transform-origin:center]"
+              style={{
+                transform: `rotateX(${digit * 36}deg) translateZ(35px)`,
+              }}
+            >
+              {digit}
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>

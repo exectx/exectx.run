@@ -1,22 +1,145 @@
+---
+import Header from "@/components/Header.astro";
+interface Props {
+  title?: string;
+}
+const { title = "i's site" } = Astro.props;
+---
+
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-background text-foreground text-lg tabular-nums">
+    <div
+      id="noise"
+      class="pointer-events-none fixed inset-0 z-40 h-full w-full overflow-hidden"
+    >
+    </div>
+    <Header />
+    <slot />
+  </body>
 </html>
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
+<script is:inline>
+  let userTheme = localStorage.getItem("theme");
+  if (![null, "light", "dark"].includes(userTheme)) {
+    localStorage.removeItem("theme");
+    userTheme = null;
+  }
+  const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+  document.documentElement.classList.remove("light", "dark");
+  document.documentElement.classList.add(userTheme ?? osTheme);
+</script>
+
+<style is:global is:inline>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  body {
+    text-rendering: optimizeLegibility;
+    text-underline-offset: 0.2rem;
+  }
+
+  #noise::after {
+    content: "";
+    position: absolute;
+    inset: -200%;
+    height: 400%;
+    width: 400%;
+    background-image: url("/somenoise.png");
+    background-size: 256px;
+    background-position: left top;
+    opacity: 4%;
+    animation: noiseFrames 2s steps(6) infinite;
+  }
+
+  @keyframes noiseFrames {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    10% {
+      transform: translate(-5%, -10%);
+    }
+    30% {
+      transform: translate(3%, -15%);
+    }
+    50% {
+      transform: translate(12%, 9%);
+    }
+    70% {
+      transform: translate(9%, 4%);
+    }
+    90% {
+      transform: translate(-1%, 7%);
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    min-width: 0;
+    border-color: hsl(var(--border));
+  }
+
+  :root {
+    --accent: 18 100% 50%;
+    --accent-foreground: 18 100% 98%;
+    --primary: 0 0% 12%;
+    --primary-foreground: 0 0% 93.5%;
+    --background: 0 0% 93.5%;
+    --foreground: 0, 0%, 12%;
+    --border: 0 0% 12%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 60%;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+      --accent: 18 100% 60%;
+      --primary: 0 0% 88%;
+      --primary-foreground: 0 0% 6.5%;
+      --background: 0 0% 7%;
+      --foreground: 0 0% 85%;
+      --border: 0 0% 85%;
+      --muted: 0 0% 5%;
+      --muted-foreground: 0 0% 55%;
+      color-scheme: dark;
+    }
+  }
+
+  :root.dark {
+    --accent: 18 100% 60%;
+    --primary: 0 0% 88%;
+    --primary-foreground: 0 0% 6.5%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 85%;
+    --border: 0 0% 85%;
+    --muted: 0 0% 5%;
+    --muted-foreground: 0 0% 55%;
+    color-scheme: dark;
+  }
 </style>

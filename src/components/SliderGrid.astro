@@ -1,0 +1,199 @@
+---
+interface Props {
+  initialNumber?: number;
+}
+const { initialNumber = 0 } = Astro.props;
+const digits = initialNumber.toString().split("");
+---
+
+<script>
+  import { $ } from "@/lib/dom";
+  const group = $("#live-counter")!;
+
+  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(
+    `${wsProtocol}://${import.meta.env.PUBLIC_WS_HOST}/ws/live-visitors`,
+  );
+
+  ws.onmessage = (messageEvent) => {
+    console.log("messageEvent", messageEvent.data);
+    onCounterUpdate(messageEvent.data);
+  };
+
+  let historicalMaxDigits = "0".length;
+
+  function onCounterUpdate(value: string) {
+    historicalMaxDigits = Math.max(value.length, historicalMaxDigits);
+
+    const frs = [];
+    for (let i = 0; i < historicalMaxDigits; i++) {
+      if (historicalMaxDigits === value.length) {
+        frs.push("1fr");
+      } else if (historicalMaxDigits > value.length) {
+        if (i < historicalMaxDigits - value.length) {
+          frs.push("0fr");
+        } else {
+          frs.push("1fr");
+        }
+      }
+    }
+    const updatedDigits = frs.join(" ");
+    const currentDigits = group.style.getPropertyValue("--digits");
+
+    if (updatedDigits !== currentDigits) {
+      if (
+        !updatedDigits.includes("0fr") &&
+        currentDigits.split(" ").length < updatedDigits.split(" ").length
+      ) {
+        // fill with 0fr the new fractional units
+        const temp = updatedDigits.split(" ");
+        const current = currentDigits.split(" ");
+        for (let i = 0; i < temp.length - current.length; i++) {
+          temp[i] = "0fr";
+        }
+        // console.log("temp", temp);
+        group.style.setProperty("--digits", temp.join(" "));
+      }
+
+      if (updatedDigits.split(" ").length !== currentDigits.split(" ").length) {
+        setTimeout(() => {
+          group.style.setProperty("--digits", updatedDigits);
+        }, 20);
+      } else {
+        group.style.setProperty("--digits", updatedDigits);
+      }
+    }
+
+    let createdNodesMaxIndex = -1;
+    if (group.children.length < frs.length) {
+      const groupLength = group.children.length;
+      createdNodesMaxIndex = frs.length - groupLength;
+      for (let i = 0; i < frs.length - groupLength; i++) {
+        const duration = 600 + (groupLength + i) * 75;
+        const first = group.children.item(0) as HTMLElement;
+        const copy = first.cloneNode(true) as HTMLElement;
+        copy.style.setProperty("opacity", "0");
+        const wheel = $("[data-wheel]", copy)!;
+        wheel.style.transitionDuration = `${duration}ms`;
+        wheel.style.setProperty("--digit", "0");
+        group.insertBefore(copy, first);
+      }
+    }
+
+    frs.forEach((fr, idx) => {
+      const child = group.children.item(idx) as HTMLElement;
+      // child.textContent = value.padStart(historicalMaxDigits, "0")[idx];
+      const wheel = $("[data-wheel]", child)!;
+      // const dataFillers = $$("[data-filler]", child)!;
+      // console.log({ dataFillers });
+      const divider = 10 ** (historicalMaxDigits - idx - 1);
+      // wheel.textContent = paddedDigits[idx];
+      // console.log(idx, divider, paddedDigits[idx]);
+      // wheel.style.setProperty("--digit", paddedDigits[idx]);
+
+      //TODO: faster rotation maybe
+
+      // const targetDigit = +value.padStart(historicalMaxDigits, "0")[idx];
+      // const currentCSSValue = +wheel.style.getPropertyValue("--digit");
+      // const remainder = currentCSSValue % 10;
+      // let increaseBy = 0;
+      // if (targetDigit !== currentCSSValue) {
+      //   increaseBy =
+      //     targetDigit > remainder
+      //       ? currentCSSValue - remainder + targetDigit - currentCSSValue
+      //       : currentCSSValue - remainder + 10 + targetDigit - currentCSSValue;
+      // }
+      //
+      // console.log(
+      //   "increaseBy",
+      //   increaseBy,
+      //   "at",
+      //   idx,
+      //   "from",
+      //   currentCSSValue,
+      //   "to",
+      //   targetDigit,
+      // );
+
+      let inTimeOut = false;
+      if (fr === "0fr") {
+        // child?.style.setProperty("width", "0em");
+        child.style.setProperty("opacity", "0");
+      } else {
+        if (idx < createdNodesMaxIndex) {
+          inTimeOut = true;
+          setTimeout(() => {
+            // child?.style.setProperty("width", "0.6");
+            child.style.setProperty("opacity", "1");
+            wheel.style.setProperty(
+              "--digit",
+              `${Math.floor(+value / divider)}`,
+            );
+          }, 30);
+        } else {
+          child.style.setProperty("opacity", "1");
+        }
+      }
+      !inTimeOut &&
+        wheel.style.setProperty("--digit", `${Math.floor(+value / divider)}`);
+    });
+  }
+</script>
+
+<div id="wheel-root" class="relative inline-block">
+  <div
+    class="absolute pointer-events-none top-0 w-full h-2 bg-gradient-to-b from-background to-transparent z-10"
+  >
+  </div>
+  <div
+    class="absolute pointer-events-none bottom-0 w-full h-2 bg-gradient-to-t from-background to-transparent z-10"
+  >
+  </div>
+  <div
+    id="live-counter"
+    class="grid relative transition-[grid-template-columns] duration-200 grid-cols-[var(--digits)]"
+    style={{
+      "--digits": digits.map(() => "1fr").join(" "),
+    }}
+  >
+    {
+      digits.map((_, idx) => {
+        const divider = 10 ** (digits.length - idx - 1);
+        const wheelDigits = Array.from({ length: 10 }, (_, index) => index);
+        const duration = 600 + (digits.length - idx - 1) * 75;
+        return (
+          <div
+            class="overflow-hidden relative transition-opacity duration-200"
+            style={{ opacity: 1 }}
+          >
+            <div data-filler aria-hidden="true" class="opacity-0 select-none">
+              8
+            </div>
+            <div
+              data-wheel
+              class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--digit)*-36deg))] transition-transform"
+              style={{
+                "--digit": Math.floor(+initialNumber / divider),
+                "transition-duration": `${duration}ms`,
+              }}
+            >
+              <div data-filler aria-hidden="true" class="opacity-0 select-none">
+                8
+              </div>
+              {wheelDigits.map((wd) => (
+                <div
+                  class="absolute top-0 inset-0 [backface-visibility:hidden] [transform-origin:center]"
+                  style={{
+                    transform: `rotateX(${wd * 36}deg) translateZ(35px)`,
+                  }}
+                >
+                  {wd}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</div>

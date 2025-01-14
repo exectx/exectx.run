@@ -1,11 +1,250 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
+import Layout from "@/layouts/Layout.astro";
+import ArrowSvg from "@/assets/arrow-up-right.svg";
+import AnimatedClock from "@/components/Clock.astro";
+import SliderGrid from "@/components/SliderGrid.astro";
+//p-4 [&>li]:before:inline-flex [&>li]:before:bg-foreground [&>li]:before:size-2
 // Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
 // Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
 
+<script>
+  import { $ } from "@/lib/dom";
+  import { toGMT } from "@/lib/clock";
+
+  const metaList = $("#meta-info") as HTMLElement;
+  const timeDiffEl = $("#time-diff", metaList) as HTMLElement;
+
+  const clientNow = new Date();
+  const now = toGMT(clientNow, -5);
+
+  const hoursDiff = clientNow.getHours() - now.getHours();
+  if (hoursDiff === 0) {
+    timeDiffEl.textContent = "same time";
+  } else {
+    const hoursText = Math.abs(hoursDiff) === 1 ? "hour" : "hours";
+    timeDiffEl.textContent = `${Math.abs(hoursDiff)} ${hoursText} ${
+      hoursDiff > 0 ? "ahead" : "behind"
+    }`;
+  }
+
+  const canvas = document.getElementById("globe") as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d")!;
+
+  let width: number, height: number;
+  let lastTimestamp = 0;
+  const frameInterval = 22.22222222222222;
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    width = canvas.width = 64 * dpr;
+    height = canvas.height = 64 * dpr;
+    canvas.style.width = `${64}px`;
+    canvas.style.height = `${64}px`;
+    ctx.scale(dpr, dpr);
+  }
+
+  let mainColor = getComputedStyle(canvas)
+    .getPropertyValue("--globeGraphicColor")
+    .trim();
+
+  new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName !== "class") return;
+      mainColor = getComputedStyle(canvas)
+        .getPropertyValue("--globeGraphicColor")
+        .trim();
+    });
+  }).observe(document.documentElement, { attributes: true });
+
+  function drawGlobe(timestamp: number) {
+    if (timestamp - lastTimestamp < frameInterval) {
+      requestAnimationFrame(drawGlobe);
+      return;
+    }
+    lastTimestamp = timestamp;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = mainColor;
+    ctx.lineWidth = 1;
+
+    // Scale factor to match 64px container while preserving 42px viewBox proportions
+    const scale = 64 / 42;
+
+    ctx.save();
+    ctx.translate(30 * scale, 21 * scale);
+    ctx.scale(scale, scale);
+
+    // Draw rotating ellipses
+    const progress = (timestamp % 10000) / 10000;
+    for (let i = 0; i < 4; i++) {
+      const ellipseProgress = (progress + i / 4) % 1;
+      const radiusY = 19.5 * Math.abs(Math.cos(ellipseProgress * Math.PI));
+      let startAngle, endAngle;
+
+      if (ellipseProgress < 0.5) {
+        startAngle = Math.PI / 2;
+        endAngle = (3 * Math.PI) / 2;
+      } else {
+        startAngle = (3 * Math.PI) / 2;
+        endAngle = Math.PI / 2;
+      }
+
+      ctx.beginPath();
+      ctx.ellipse(-10.5, 0, radiusY, 19.5, 0, startAngle, endAngle);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    requestAnimationFrame(drawGlobe);
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+  requestAnimationFrame(drawGlobe);
+
+  // const gmtMinus5 = new Date().toLocaleString("en-US", {
+  //   timeZone: "America/New_York",
+  //   hour: "numeric",
+  //   minute: "numeric",
+  //   second: "numeric",
+  // });
+</script>
+
 <Layout>
-	<Welcome />
+  <main class="px-4 w-full mx-auto max-w-[75ch]">
+    <section class="pt-4 flex flex-col gap-10">
+      <div class="grid place-items-center gap-2">
+        <h1 class="text-4xl font-mono">~/exectx</h1>
+        <div class="globe-containter">
+          <canvas id="globe" width="64" height="64"></canvas>
+          <svg class="size-16" viewBox="0 0 41 42" fill="none">
+            <circle cx="19.5" cy="21" r="19.5" stroke="currentColor"></circle>
+            <path d="M3.5 9.75 35 9.75" stroke="currentColor"></path>
+            <path d="M0 21 39 21" stroke="currentColor"></path>
+            <path d="M3 32 35 32.5" stroke="currentColor"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div
+        id="about"
+        class="gap-[1px] border bg-border [&>div]:bg-background grid grid-cols-2"
+      >
+        <div class="grid-item col-span-2">
+          <p class="p-4 h-full">
+            web developer, now learning ai systems and lots of cool tech.
+            previously worked in startups and realized that building software
+            people want is so cool. for more information about my work, you can
+            explore my <a
+              href="/projects"
+              class="underline hover:text-accent transition-colors">projects</a
+            >,
+            <a
+              href="/posts"
+              class="underline hover:text-accent transition-colors"
+              >written content</a
+            > or social media.
+          </p>
+        </div>
+        <div class="grid-item">
+          <ul id="meta-info" class="flex flex-col gap-2 p-4 h-full">
+            <li>
+              <AnimatedClock />
+              <span>GMT -5,</span>{" "}<span id="time-diff"></span>
+            </li>
+            <li>V.2024.12.17</li>
+            <li class="flex items-center gap-2">
+              <div class="relative size-2 rounded-full bg-accent">
+                <div
+                  class="animate-ping-2 absolute bg-accent/50 rounded-full inset-0"
+                >
+                </div>
+              </div>
+
+              <SliderGrid initialNumber={0} /> Online
+            </li>
+          </ul>
+        </div>
+
+        <div class="grid-item">
+          <ul class="flex flex-col gap-2 p-4 h-full">
+            <li>
+              <a
+                href="mailto:i@exectx.run"
+                class="underline hover:text-accent transition-colors"
+                >i@exectx.run</a
+              >
+            </li>
+            <li>
+              <a
+                href="https://github.com/exectx"
+                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                >github
+                <ArrowSvg class={"size-4"} />
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://bsky.app/profile/exectx.bsky.social"
+                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                >bluesky
+                <ArrowSvg class={"size-4"} />
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://twitter.com/exectx"
+                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                >twitter
+                <ArrowSvg class={"size-4"} />
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section aria-hidden="true" class="h-16 border-x hidden"></section>
+  </main>
 </Layout>
+
+<style>
+  .grid-section {
+    margin-top: 5rem;
+  }
+  @media (min-width: 768px) {
+    .grid-section {
+      margin-top: 7rem;
+    }
+  }
+
+  .dashed-divider {
+    position: absolute;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      hsla(0, 0%, 66%, 1),
+      hsla(0, 0%, 66%, 1) 4px,
+      transparent 4px,
+      transparent 10px
+    );
+  }
+  .globe-containter {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    color: var(--globeGraphicColor);
+    overflow: visible;
+  }
+  canvas {
+    position: absolute;
+    left: 1px;
+    height: 100%;
+    aspect-ratio: 128 / 128;
+  }
+  * {
+    --globeGraphicColor: hsl(var(--foreground));
+  }
+</style>
