@@ -23,15 +23,20 @@ const links = [
   const themeButton = $("#theme-toggle") as HTMLButtonElement;
 
   function getTheme() {
+    const hasUserTheme = localStorage.getItem("user-theme");
     const userTheme = localStorage.getItem("theme");
     const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light";
+    if (!hasUserTheme) {
+      return ["light", osTheme];
+    }
     return [userTheme ?? osTheme, osTheme];
   }
 
   function toggleTheme() {
     const [theme, osTheme] = getTheme();
+    localStorage.setItem("user-theme", "1");
     const newTheme = theme === "dark" ? "light" : "dark";
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(newTheme);
@@ -45,8 +50,17 @@ const links = [
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", (e) => {
-      if (localStorage.getItem("theme")) return;
       const updatedOsTheme = e.matches ? "dark" : "light";
+      const [theme] = getTheme();
+      if (theme === updatedOsTheme) {
+        localStorage.removeItem("theme");
+      }
+      if (
+        localStorage.getItem("theme") ||
+        !localStorage.getItem("user-theme")
+      ) {
+        return;
+      }
       document.documentElement.classList.remove("light", "dark");
       document.documentElement.classList.add(updatedOsTheme);
     });

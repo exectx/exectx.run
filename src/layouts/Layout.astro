@@ -36,20 +36,37 @@ const { title = "i's site" } = Astro.props;
   </body>
 </html>
 
-<script is:inline>
-  let userTheme = localStorage.getItem("theme");
-  if (![null, "light", "dark"].includes(userTheme)) {
-    localStorage.removeItem("theme");
-    userTheme = null;
+<script>
+  import posthog from "posthog-js";
+  if (import.meta.env.PROD) {
+    posthog.init(import.meta.env.PUBLIC_POSTHOG_KEY, {
+      api_host: import.meta.env.PUBLIC_POSTHOG_API_HOST,
+      person_profiles: "always",
+    });
   }
-  const osTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-  document.documentElement.classList.remove("light", "dark");
-  document.documentElement.classList.add(userTheme ?? osTheme);
 </script>
 
-<style is:global is:inline>
+<script is:inline>
+  let userTheme = localStorage.getItem("theme");
+  const hasUserTheme = localStorage.getItem("user-theme");
+  let defaultTheme = "light";
+  if (hasUserTheme) {
+    if (![null, "light", "dark"].includes(userTheme)) {
+      localStorage.removeItem("theme");
+      userTheme = null;
+    }
+    defaultTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  if (userTheme === defaultTheme) {
+    localStorage.removeItem("theme");
+  }
+  document.documentElement.classList.remove("light", "dark");
+  document.documentElement.classList.add(userTheme ?? defaultTheme);
+</script>
+
+<style is:inline>
   html,
   body {
     margin: 0;
