@@ -20,6 +20,10 @@ const digits = initialNumber.toString().split("");
     onCounterUpdate(messageEvent.data);
   };
 
+  ws.onerror = (error) => {
+    console.error("WebSocket error", error);
+  };
+
   let historicalMaxDigits = "0".length;
 
   function onCounterUpdate(value: string) {

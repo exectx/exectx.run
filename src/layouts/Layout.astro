@@ -25,12 +25,8 @@ const { title = "i's site" } = Astro.props;
       rel="stylesheet"
     />
   </head>
-  <body class="bg-background text-foreground text-lg tabular-nums">
-    <div
-      id="noise"
-      class="pointer-events-none fixed inset-0 z-40 h-full w-full overflow-hidden"
-    >
-    </div>
+  <body class="tabular-nums">
+    <div id="noise-mask"></div>
     <Header />
     <slot />
   </body>
@@ -75,42 +71,39 @@ const { title = "i's site" } = Astro.props;
   }
 
   body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    position: relative;
     text-rendering: optimizeLegibility;
     text-underline-offset: 0.2rem;
+    /* font-size: 1.125rem; */
+    /* line-height: 1.75rem; */
   }
 
-  #noise::after {
-    content: "";
-    position: absolute;
-    inset: -200%;
-    height: 400%;
-    width: 400%;
-    background-image: url("/somenoise.png");
-    background-size: 256px;
-    background-position: left top;
-    opacity: 4%;
-    animation: noiseFrames 2s steps(6) infinite;
+  #noise-mask {
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 999999;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    opacity: 8%;
+    background:
+      repeating-radial-gradient(#000 0 0.0001%, #fff 0 0.0002%) 50% 0/2500px
+        2500px,
+      repeating-conic-gradient(#000 0 0.0001%, #fff 0 0.0002%) 60% 60%/2500px
+        2500px;
+    background-blend-mode: difference;
+    animation: noise-anim 0.2s infinite alternate;
   }
 
-  @keyframes noiseFrames {
-    0%,
+  @keyframes noise-anim {
     100% {
-      transform: translate(0, 0);
-    }
-    10% {
-      transform: translate(-5%, -10%);
-    }
-    30% {
-      transform: translate(3%, -15%);
-    }
-    50% {
-      transform: translate(12%, 9%);
-    }
-    70% {
-      transform: translate(9%, 4%);
-    }
-    90% {
-      transform: translate(-1%, 7%);
+      background-position:
+        50% 0,
+        60% 50%;
     }
   }
 
@@ -126,7 +119,7 @@ const { title = "i's site" } = Astro.props;
     --accent-foreground: 18 100% 98%;
     --primary: 0 0% 12%;
     --primary-foreground: 0 0% 93.5%;
-    --background: 0 0% 93.5%;
+    --background: 0 0% 92.5%;
     --foreground: 0, 0%, 12%;
     --border: 0 0% 12%;
     --muted: 0 0% 95%;
