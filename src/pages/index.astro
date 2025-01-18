@@ -9,22 +9,27 @@ import SliderGrid from "@/components/SliderGrid.astro";
 
 <script>
   import { $ } from "@/lib/dom";
-  import { toGMT } from "@/lib/clock";
 
-  const metaList = $("#meta-info") as HTMLElement;
-  const timeDiffEl = $("#time-diff", metaList) as HTMLElement;
+  const metaList = $("#meta-info")!;
+  const timeDiffEl = $("#time-diff", metaList)!;
+  const clockContainerEl = $("[data-tooltip-timezone]", metaList)!;
 
   const clientNow = new Date();
-  const now = toGMT(clientNow, -5);
-
-  const hoursDiff = clientNow.getHours() - now.getHours();
-  if (hoursDiff === 0) {
+  // Get client's timezone offset in hours (e.g., UTC+3 → 3)
+  const clientOffsetHours = -clientNow.getTimezoneOffset() / 60;
+  const siteOffset = -5;
+  // Calculate how much (GMT-5) is ahead/behind the CLIENT
+  const diffHours = siteOffset - clientOffsetHours;
+  if (diffHours === 0) {
     timeDiffEl.textContent = "same time";
+    clockContainerEl.textContent = "We're in the same timezone!";
   } else {
-    const hoursText = Math.abs(hoursDiff) === 1 ? "hour" : "hours";
-    timeDiffEl.textContent = `${Math.abs(hoursDiff)} ${hoursText} ${
-      hoursDiff > 0 ? "ahead" : "behind"
+    const hoursText = Math.abs(diffHours) === 1 ? "hour" : "hours";
+    const hoursDiff = `${Math.abs(diffHours)} ${hoursText} ${
+      diffHours > 0 ? "ahead" : "behind"
     }`;
+    timeDiffEl.textContent = hoursDiff;
+    clockContainerEl.textContent = `I'm ${hoursDiff} of you`;
   }
 
   const canvas = document.getElementById("globe") as HTMLCanvasElement;
@@ -32,7 +37,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
 
   let width: number, height: number;
   let lastTimestamp = 0;
-  const frameInterval = 22.22222222222222;
+  const frameInterval = 24;
 
   function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
@@ -101,20 +106,13 @@ import SliderGrid from "@/components/SliderGrid.astro";
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
   requestAnimationFrame(drawGlobe);
-
-  // const gmtMinus5 = new Date().toLocaleString("en-US", {
-  //   timeZone: "America/New_York",
-  //   hour: "numeric",
-  //   minute: "numeric",
-  //   second: "numeric",
-  // });
 </script>
 
 <Layout>
-  <main class="px-4 w-full mx-auto max-w-[75ch]">
+  <main class="px-4 w-full mx-auto max-w-[80ch]">
     <section class="pt-4 flex flex-col gap-10">
-      <div class="grid place-items-center gap-2">
-        <h1 class="text-3xl font-mono">~/exectx</h1>
+      <div class="grid place-items-center gap-4">
+        <h1 class="text-4xl font-mono">~/exectx</h1>
         <div class="globe-containter">
           <canvas id="globe" width="64" height="64"></canvas>
           <svg class="size-16" viewBox="0 0 41 42" fill="none">
@@ -132,9 +130,9 @@ import SliderGrid from "@/components/SliderGrid.astro";
       >
         <div class="grid-item col-span-2">
           <p class="p-4 h-full">
-            web developer, now learning ai systems and lots of cool tech.
-            previously worked in startups and realized that building software
-            people want is so cool. for more information about my work, you can
+            I am a web developer, now learning AI systems and lots of cool tech.
+            Previously worked in startups and realized that building software
+            people want is so cool. For more information about my work, you can
             explore my <a
               href="/projects"
               class="underline hover:text-accent transition-colors">projects</a
@@ -149,8 +147,15 @@ import SliderGrid from "@/components/SliderGrid.astro";
         <div class="grid-item">
           <ul id="meta-info" class="flex flex-col gap-2 p-4 h-full">
             <li>
-              <AnimatedClock />
-              <span>GMT&nbsp;-5,</span>{" "}<span id="time-diff"></span>
+              <div class="inline-block cursor-help relative group">
+                <AnimatedClock />
+                <span>GMT&nbsp;-5,</span>{" "}<span id="time-diff"></span>
+                <div
+                  data-tooltip-timezone
+                  class="absolute z-10 hidden group-hover:block w-full bg-background border p-2 shadow-md left-full max-sm:left-1/2 bottom-full max-sm:-translate-x-1/2"
+                >
+                </div>
+              </div>
             </li>
             <li>V.2024.12.17</li>
             <li class="flex items-center gap-2">
@@ -161,7 +166,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
                 </div>
               </div>
 
-              <SliderGrid initialNumber={0} /> Online
+              <SliderGrid initialNumber={0} /> online
             </li>
           </ul>
         </div>
@@ -239,7 +244,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
   }
   canvas {
     position: absolute;
-    left: 1px;
+    left: 0.8px;
     height: 100%;
     aspect-ratio: 128 / 128;
   }

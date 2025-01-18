@@ -8,139 +8,236 @@ const digits = initialNumber.toString().split("");
 
 <script>
   import { $ } from "@/lib/dom";
+  import { throttle } from "@/lib/throttle";
+
   const group = $("#live-counter")!;
+  const counterText = getInitialDigits();
+  let counter = +counterText;
+  let maxIncomingCounterDigitsLength = counterText.length;
+  initWebSocket();
 
-  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const ws = new WebSocket(
-    `${wsProtocol}://${import.meta.env.PUBLIC_WS_HOST}/ws/live-visitors`,
-  );
+  function getInitialDigits() {
+    const initialDigits = Array.from(group.children || [])
+      .map((child) => {
+        const wheel = $(
+          "[data-wheel]",
+          child as HTMLElement,
+        ) satisfies HTMLElement | null;
+        return wheel?.style.getPropertyValue("--digit") || "0";
+      })
+      .join("");
+    return initialDigits;
+  }
 
-  ws.onmessage = (messageEvent) => {
-    console.log("messageEvent", messageEvent.data);
-    onCounterUpdate(messageEvent.data);
-  };
+  function initWebSocket() {
+    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(
+      `${wsProtocol}://${import.meta.env.PUBLIC_WS_HOST}/ws/live-visitors`,
+    );
+    ws.onopen = () => ws.send("get");
+    const updateCounter = throttle((value: string) => {
+      onCounterUpdate(value);
+    }, 800);
+    ws.onmessage = (messageEvent) => (
+      console.log(messageEvent.data, "<- ws"), updateCounter(messageEvent.data)
+    );
+    ws.onerror = (error) => {
+      console.error("WebSocket error", error);
+    };
+    return ws;
+  }
 
-  ws.onerror = (error) => {
-    console.error("WebSocket error", error);
-  };
-
-  let historicalMaxDigits = "0".length;
-
-  function onCounterUpdate(value: string) {
-    historicalMaxDigits = Math.max(value.length, historicalMaxDigits);
-
-    const frs = [];
-    for (let i = 0; i < historicalMaxDigits; i++) {
-      if (historicalMaxDigits === value.length) {
+  function calculateFractionalUnits(value: string): string[] {
+    const frs: string[] = [];
+    for (let i = 0; i < maxIncomingCounterDigitsLength; i++) {
+      if (maxIncomingCounterDigitsLength === value.length) {
         frs.push("1fr");
-      } else if (historicalMaxDigits > value.length) {
-        if (i < historicalMaxDigits - value.length) {
+      } else if (maxIncomingCounterDigitsLength > value.length) {
+        if (i < maxIncomingCounterDigitsLength - value.length) {
           frs.push("0fr");
         } else {
           frs.push("1fr");
         }
       }
     }
-    const updatedDigits = frs.join(" ");
-    const currentDigits = group.style.getPropertyValue("--digits");
+    return frs;
+  }
 
-    if (updatedDigits !== currentDigits) {
+  function updateGridLayout(newFrUnits: string): void {
+    const currentFrUnits = group.style.getPropertyValue("--digits-frs");
+    if (newFrUnits !== currentFrUnits) {
       if (
-        !updatedDigits.includes("0fr") &&
-        currentDigits.split(" ").length < updatedDigits.split(" ").length
+        !newFrUnits.includes("0fr") &&
+        currentFrUnits.split(" ").length < newFrUnits.split(" ").length
       ) {
-        // fill with 0fr the new fractional units
-        const temp = updatedDigits.split(" ");
-        const current = currentDigits.split(" ");
+        const temp = newFrUnits.split(" ");
+        const current = currentFrUnits.split(" ");
         for (let i = 0; i < temp.length - current.length; i++) {
           temp[i] = "0fr";
         }
-        // console.log("temp", temp);
-        group.style.setProperty("--digits", temp.join(" "));
+        group.style.setProperty("--digits-frs", temp.join(" "));
       }
-
-      if (updatedDigits.split(" ").length !== currentDigits.split(" ").length) {
+      if (newFrUnits.split(" ").length !== currentFrUnits.split(" ").length) {
         setTimeout(() => {
-          group.style.setProperty("--digits", updatedDigits);
-        }, 20);
+          group.style.setProperty("--digits-frs", newFrUnits);
+        }, 40);
       } else {
-        group.style.setProperty("--digits", updatedDigits);
+        group.style.setProperty("--digits-frs", newFrUnits);
       }
     }
+  }
 
+  function createAdditionalNodes(frs: string[]): number {
     let createdNodesMaxIndex = -1;
+
     if (group.children.length < frs.length) {
       const groupLength = group.children.length;
       createdNodesMaxIndex = frs.length - groupLength;
+
       for (let i = 0; i < frs.length - groupLength; i++) {
-        const duration = 600 + (groupLength + i) * 75;
+        const duration = 800 + (groupLength + i) * 100;
         const first = group.children.item(0) as HTMLElement;
         const copy = first.cloneNode(true) as HTMLElement;
+
         copy.style.setProperty("opacity", "0");
         const wheel = $("[data-wheel]", copy)!;
         wheel.style.transitionDuration = `${duration}ms`;
         wheel.style.setProperty("--digit", "0");
+
         group.insertBefore(copy, first);
       }
     }
 
+    return createdNodesMaxIndex;
+  }
+
+  function mod(n: number, m: number) {
+    return ((n % m) + m) % m;
+  }
+
+  function getCurrentDisplayedValue(): number {
+    const digits = Array.from(group.children)
+      .map((child, idx) => {
+        const wheel = $("[data-wheel]", child as HTMLElement)!;
+        const multidigit = wheel.style.getPropertyValue("--digit");
+        console.log(
+          `0) multidigit[${idx}] = ${multidigit}, digit (${mod(+multidigit, 10)})`,
+        );
+        // const digit = +multidigit % 10;
+        const digit = mod(+multidigit, 10);
+        return digit;
+      })
+      .join("");
+    console.log(`0) digits -> ${digits}`);
+    return +digits;
+  }
+
+  function onCounterUpdate(value: string): void {
+    maxIncomingCounterDigitsLength = Math.max(
+      value.length,
+      maxIncomingCounterDigitsLength,
+    );
+
+    const frs = calculateFractionalUnits(value);
+    const updatedFrUnits = frs.join(" ");
+    updateGridLayout(updatedFrUnits);
+
+    const createdNodesMaxIndex = createAdditionalNodes(frs);
+    const currentDisplayedValue = getCurrentDisplayedValue();
+
+    const targetValues = value.padStart(maxIncomingCounterDigitsLength, "0");
+    const difference = +value - currentDisplayedValue;
+    console.log(
+      `animate: [${currentDisplayedValue}],<${counter}> -> ${+value}, (${difference > 0 ? "+" : ""}${difference})`,
+    );
+
+    if (difference === 0) return;
+
+    const shouldIncrease = +value > currentDisplayedValue;
+
     frs.forEach((fr, idx) => {
       const child = group.children.item(idx) as HTMLElement;
-      // child.textContent = value.padStart(historicalMaxDigits, "0")[idx];
       const wheel = $("[data-wheel]", child)!;
-      // const dataFillers = $$("[data-filler]", child)!;
-      // console.log({ dataFillers });
-      const divider = 10 ** (historicalMaxDigits - idx - 1);
-      // wheel.textContent = paddedDigits[idx];
-      // console.log(idx, divider, paddedDigits[idx]);
-      // wheel.style.setProperty("--digit", paddedDigits[idx]);
 
-      //TODO: faster rotation maybe
+      const unit = 10 ** (maxIncomingCounterDigitsLength - idx - 1);
+      const currentMultiDigit = +wheel.style.getPropertyValue("--digit");
 
-      // const targetDigit = +value.padStart(historicalMaxDigits, "0")[idx];
-      // const currentCSSValue = +wheel.style.getPropertyValue("--digit");
-      // const remainder = currentCSSValue % 10;
-      // let increaseBy = 0;
-      // if (targetDigit !== currentCSSValue) {
-      //   increaseBy =
-      //     targetDigit > remainder
-      //       ? currentCSSValue - remainder + targetDigit - currentCSSValue
-      //       : currentCSSValue - remainder + 10 + targetDigit - currentCSSValue;
-      // }
-      //
-      // console.log(
-      //   "increaseBy",
-      //   increaseBy,
-      //   "at",
-      //   idx,
-      //   "from",
-      //   currentCSSValue,
-      //   "to",
-      //   targetDigit,
-      // );
+      const targetDigit = +targetValues[idx];
+      const remainder = currentMultiDigit % 10;
+      // const remainder = mod(currentMultiDigit, 10);
+
+      let moveBy = calculateMoveBy(
+        shouldIncrease,
+        difference,
+        currentMultiDigit,
+        remainder,
+        targetDigit,
+        unit,
+      );
+      console.log(
+        `+/-) multidigit[${idx}] = ${currentMultiDigit} ${moveBy > 0 ? "+" : "-"} ${Math.abs(moveBy)} -> t(${targetDigit}) a(${currentMultiDigit + moveBy})`,
+      );
 
       let inTimeOut = false;
       if (fr === "0fr") {
-        // child?.style.setProperty("width", "0em");
         child.style.setProperty("opacity", "0");
       } else {
         if (idx < createdNodesMaxIndex) {
           inTimeOut = true;
           setTimeout(() => {
-            // child?.style.setProperty("width", "0.6");
             child.style.setProperty("opacity", "1");
-            wheel.style.setProperty(
-              "--digit",
-              `${Math.floor(+value / divider)}`,
-            );
-          }, 30);
+            wheel.style.setProperty("--digit", `${currentMultiDigit + moveBy}`);
+          }, 40);
         } else {
           child.style.setProperty("opacity", "1");
         }
       }
-      !inTimeOut &&
-        wheel.style.setProperty("--digit", `${Math.floor(+value / divider)}`);
+
+      if (!inTimeOut) {
+        wheel.style.setProperty("--digit", `${currentMultiDigit + moveBy}`);
+      }
     });
+
+    counter = +value;
+  }
+
+  function calculateMoveBy(
+    shouldIncrease: boolean,
+    difference: number,
+    currentMultiDigit: number,
+    remainder: number,
+    targetDigit: number,
+    unit: number,
+  ): number {
+    let moveBy = 0;
+    if (shouldIncrease) {
+      if (targetDigit !== currentMultiDigit) {
+        moveBy =
+          targetDigit > remainder
+            ? currentMultiDigit - remainder + targetDigit - currentMultiDigit
+            : currentMultiDigit -
+              remainder +
+              10 +
+              targetDigit -
+              currentMultiDigit;
+      } else {
+        moveBy = difference > unit ? 10 : 0;
+      }
+    } else {
+      if (targetDigit !== currentMultiDigit) {
+        moveBy =
+          targetDigit < remainder
+            ? currentMultiDigit - remainder + targetDigit - currentMultiDigit
+            : currentMultiDigit -
+              remainder -
+              10 +
+              targetDigit -
+              currentMultiDigit;
+      } else {
+        moveBy = difference < -unit ? -10 : 0;
+      }
+    }
+    return moveBy;
   }
 </script>
 
@@ -155,19 +252,19 @@ const digits = initialNumber.toString().split("");
   </div>
   <div
     id="live-counter"
-    class="grid relative transition-[grid-template-columns] duration-200 grid-cols-[var(--digits)]"
+    class="grid relative transition-[grid-template-columns] duration-500 grid-cols-[var(--digits-frs)]"
     style={{
-      "--digits": digits.map(() => "1fr").join(" "),
+      "--digits-frs": digits.map(() => "1fr").join(" "),
     }}
   >
     {
       digits.map((_, idx) => {
-        const divider = 10 ** (digits.length - idx - 1);
+        const unit = 10 ** (digits.length - idx - 1);
         const wheelDigits = Array.from({ length: 10 }, (_, index) => index);
-        const duration = 600 + (digits.length - idx - 1) * 75;
+        const duration = 800 + (digits.length - idx - 1) * 100;
         return (
           <div
-            class="overflow-hidden relative transition-opacity duration-200"
+            class="overflow-hidden relative transition-opacity duration-500"
             style={{ opacity: 1 }}
           >
             <div data-filler aria-hidden="true" class="opacity-0 select-none">
@@ -177,7 +274,7 @@ const digits = initialNumber.toString().split("");
               data-wheel
               class="absolute top-0 [transform-style:preserve-3d] [transform:rotateX(calc(var(--digit)*-36deg))] transition-transform"
               style={{
-                "--digit": Math.floor(+initialNumber / divider),
+                "--digit": Math.floor(+initialNumber / unit),
                 "transition-duration": `${duration}ms`,
               }}
             >

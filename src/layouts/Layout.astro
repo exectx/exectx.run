@@ -26,7 +26,34 @@ const { title = "i's site" } = Astro.props;
     />
   </head>
   <body class="tabular-nums">
-    <div id="noise-mask"></div>
+    <div id="noise-mask">
+      <svg style="width: 100%; height: 100%;">
+        <filter id="noise">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.35"
+            numOctaves="1"
+            seed="0"
+            stitchTiles="stitch"
+            result="noise"
+          >
+            <animate
+              attributeName="seed"
+              from="0"
+              to="100"
+              dur="5s"
+              repeatCount="indefinite"></animate>
+          </feTurbulence>
+          <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0 1"></feFuncR>
+            <feFuncG type="discrete" tableValues="0 1"></feFuncG>
+            <feFuncB type="discrete" tableValues="0 1"></feFuncB>
+          </feComponentTransfer>
+        </filter>
+        <rect width="100%" height="100%" filter="url(#noise)"></rect>
+      </svg>
+    </div>
     <Header />
     <slot />
   </body>
@@ -76,8 +103,8 @@ const { title = "i's site" } = Astro.props;
     position: relative;
     text-rendering: optimizeLegibility;
     text-underline-offset: 0.2rem;
-    /* font-size: 1.125rem; */
-    /* line-height: 1.75rem; */
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 
   #noise-mask {
@@ -85,26 +112,11 @@ const { title = "i's site" } = Astro.props;
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 999999;
+    z-index: 999;
     overflow: hidden;
     width: 100%;
     height: 100%;
-    opacity: 8%;
-    background:
-      repeating-radial-gradient(#000 0 0.0001%, #fff 0 0.0002%) 50% 0/2500px
-        2500px,
-      repeating-conic-gradient(#000 0 0.0001%, #fff 0 0.0002%) 60% 60%/2500px
-        2500px;
-    background-blend-mode: difference;
-    animation: noise-anim 0.2s infinite alternate;
-  }
-
-  @keyframes noise-anim {
-    100% {
-      background-position:
-        50% 0,
-        60% 50%;
-    }
+    opacity: 4%;
   }
 
   *,
@@ -115,11 +127,11 @@ const { title = "i's site" } = Astro.props;
   }
 
   :root {
-    --accent: 18 100% 50%;
+    --accent: 220 100% 70%;
     --accent-foreground: 18 100% 98%;
     --primary: 0 0% 12%;
-    --primary-foreground: 0 0% 93.5%;
-    --background: 0 0% 92.5%;
+    --primary-foreground: 0 0% 91.5%;
+    --background: 0 0% 90.5%;
     --foreground: 0, 0%, 12%;
     --border: 0 0% 12%;
     --muted: 0 0% 95%;
@@ -129,10 +141,10 @@ const { title = "i's site" } = Astro.props;
 
   @media (prefers-color-scheme: dark) {
     :root:not(.light) {
-      --accent: 18 100% 60%;
+      --accent: 220 100% 85%;
       --primary: 0 0% 88%;
-      --primary-foreground: 0 0% 6.5%;
-      --background: 0 0% 7%;
+      --primary-foreground: 0 0% 4.5%;
+      --background: 0 0% 5%;
       --foreground: 0 0% 85%;
       --border: 0 0% 85%;
       --muted: 0 0% 5%;
@@ -142,10 +154,10 @@ const { title = "i's site" } = Astro.props;
   }
 
   :root.dark {
-    --accent: 18 100% 60%;
+    --accent: 220 100% 85%;
     --primary: 0 0% 88%;
-    --primary-foreground: 0 0% 6.5%;
-    --background: 0 0% 7%;
+    --primary-foreground: 0 0% 4.5%;
+    --background: 0 0% 5%;
     --foreground: 0 0% 85%;
     --border: 0 0% 85%;
     --muted: 0 0% 5%;
