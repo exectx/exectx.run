@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --animate-ping-2: ping-2 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --color-page: light-dark(oklch(0.69 0.24 268), oklch(0.89 0.34 268));
+  --color-page-foreground: oklch(0.98 4 0.7);
+  --color-background: light-dark(oklch(0.93 0 0), oklch(0.157 0 0));
+  --color-foreground: light-dark(oklch(0.24 0 0), oklch(0.88 0 0));
+  --color-primary: light-dark(oklch(0.24 0 0), oklch(0.88 0 0));
+  --color-primary-foreground: light-dark(oklch(0.94 0 0), oklch(0.15 0 0));
+  --color-border: light-dark(oklch(0.24 0 0), oklch(0.88 0 0));
+
+  @keyframes ping-2 {
+    75%,
+    100% {
+      transform: scale(3);
+      opacity: 0;
+    }
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
