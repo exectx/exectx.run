@@ -48,16 +48,12 @@ import SliderGrid from "@/components/SliderGrid.astro";
     ctx.scale(dpr, dpr);
   }
 
-  let mainColor = getComputedStyle(canvas)
-    .getPropertyValue("--globeGraphicColor")
-    .trim();
+  let mainColor = getComputedStyle(canvas).color;
 
   new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.attributeName !== "class") return;
-      mainColor = getComputedStyle(canvas)
-        .getPropertyValue("--globeGraphicColor")
-        .trim();
+      mainColor = getComputedStyle(canvas).color;
     });
   }).observe(document.documentElement, { attributes: true });
 
@@ -113,7 +109,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
     <section class="pt-4 flex flex-col gap-10">
       <div class="grid place-items-center gap-4">
         <h1 class="text-4xl font-mono">~/exectx</h1>
-        <div class="globe-containter">
+        <div class="globe-container">
           <canvas id="globe" width="64" height="64"></canvas>
           <svg class="size-16" viewBox="0 0 41 42" fill="none">
             <circle cx="19.5" cy="21" r="19.5" stroke="currentColor"></circle>
@@ -130,16 +126,14 @@ import SliderGrid from "@/components/SliderGrid.astro";
       >
         <div class="grid-item col-span-2">
           <p class="p-4 h-full">
-            I am a web developer, now learning AI systems and lots of cool tech.
+            I am a web developer, now learning ai systems and lots of cool tech.
             Previously worked in startups and realized that building software
             people want is so cool. For more information about my work, you can
             explore my <a
               href="/projects"
-              class="underline hover:text-accent transition-colors">projects</a
+              class="underline hover:text-page transition-colors">projects</a
             >,
-            <a
-              href="/posts"
-              class="underline hover:text-accent transition-colors"
+            <a href="/posts" class="underline hover:text-page transition-colors"
               >written content</a
             > or social media.
           </p>
@@ -159,9 +153,9 @@ import SliderGrid from "@/components/SliderGrid.astro";
             </li>
             <li>V.2024.12.17</li>
             <li class="flex items-center gap-2">
-              <div class="relative size-2 rounded-full bg-accent">
+              <div class="relative size-2 rounded-full bg-page">
                 <div
-                  class="animate-ping-2 absolute bg-accent/50 rounded-full inset-0"
+                  class="animate-ping-2 absolute bg-page/50 rounded-full inset-0"
                 >
                 </div>
               </div>
@@ -176,14 +170,14 @@ import SliderGrid from "@/components/SliderGrid.astro";
             <li>
               <a
                 href="mailto:i@exectx.run"
-                class="underline hover:text-accent transition-colors"
+                class="underline hover:text-page transition-colors"
                 >i@exectx.run</a
               >
             </li>
             <li>
               <a
                 href="https://github.com/exectx"
-                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                class="underline inline-flex items-center gap-1 hover:text-page transition-colors"
                 >github
                 <ArrowSvg class={"size-4"} />
               </a>
@@ -191,7 +185,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
             <li>
               <a
                 href="https://bsky.app/profile/exectx.bsky.social"
-                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                class="underline inline-flex items-center gap-1 hover:text-page transition-colors"
                 >bluesky
                 <ArrowSvg class={"size-4"} />
               </a>
@@ -199,7 +193,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
             <li>
               <a
                 href="https://twitter.com/exectx"
-                class="underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+                class="underline inline-flex items-center gap-1 hover:text-page transition-colors"
                 >twitter
                 <ArrowSvg class={"size-4"} />
               </a>
@@ -235,11 +229,11 @@ import SliderGrid from "@/components/SliderGrid.astro";
       transparent 10px
     );
   }
-  .globe-containter {
+  .globe-container {
     position: relative;
     width: 64px;
     height: 64px;
-    color: var(--globeGraphicColor);
+    color: var(--color-foreground);
     overflow: visible;
   }
   canvas {
@@ -247,8 +241,5 @@ import SliderGrid from "@/components/SliderGrid.astro";
     left: 0.8px;
     height: 100%;
     aspect-ratio: 128 / 128;
-  }
-  * {
-    --globeGraphicColor: hsl(var(--foreground));
   }
 </style>

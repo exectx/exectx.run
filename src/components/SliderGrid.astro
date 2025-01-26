@@ -95,7 +95,7 @@ const digits = initialNumber.toString().split("");
       createdNodesMaxIndex = frs.length - groupLength;
 
       for (let i = 0; i < frs.length - groupLength; i++) {
-        const duration = 800 + (groupLength + i) * 100;
+        const duration = 800 + (groupLength + i) * 120;
         const first = group.children.item(0) as HTMLElement;
         const copy = first.cloneNode(true) as HTMLElement;
 
@@ -261,7 +261,7 @@ const digits = initialNumber.toString().split("");
       digits.map((_, idx) => {
         const unit = 10 ** (digits.length - idx - 1);
         const wheelDigits = Array.from({ length: 10 }, (_, index) => index);
-        const duration = 800 + (digits.length - idx - 1) * 100;
+        const duration = 800 + (digits.length - idx - 1) * 120;
         return (
           <div
             class="overflow-hidden relative transition-opacity duration-500"

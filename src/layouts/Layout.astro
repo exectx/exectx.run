@@ -1,4 +1,5 @@
 ---
+import "./app.css";
 import Header from "@/components/Header.astro";
 interface Props {
   title?: string;
@@ -98,8 +99,6 @@ const { title = "i's site" } = Astro.props;
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
     position: relative;
     text-rendering: optimizeLegibility;
     text-underline-offset: 0.2rem;
@@ -123,45 +122,5 @@ const { title = "i's site" } = Astro.props;
   *::before,
   *::after {
     min-width: 0;
-    border-color: hsl(var(--border));
-  }
-
-  :root {
-    --accent: 220 100% 70%;
-    --accent-foreground: 18 100% 98%;
-    --primary: 0 0% 12%;
-    --primary-foreground: 0 0% 91.5%;
-    --background: 0 0% 90.5%;
-    --foreground: 0, 0%, 12%;
-    --border: 0 0% 12%;
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 60%;
-    color-scheme: light;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not(.light) {
-      --accent: 220 100% 85%;
-      --primary: 0 0% 88%;
-      --primary-foreground: 0 0% 4.5%;
-      --background: 0 0% 5%;
-      --foreground: 0 0% 85%;
-      --border: 0 0% 85%;
-      --muted: 0 0% 5%;
-      --muted-foreground: 0 0% 55%;
-      color-scheme: dark;
-    }
-  }
-
-  :root.dark {
-    --accent: 220 100% 85%;
-    --primary: 0 0% 88%;
-    --primary-foreground: 0 0% 4.5%;
-    --background: 0 0% 5%;
-    --foreground: 0 0% 85%;
-    --border: 0 0% 85%;
-    --muted: 0 0% 5%;
-    --muted-foreground: 0 0% 55%;
-    color-scheme: dark;
   }
 </style>

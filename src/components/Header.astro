@@ -72,21 +72,22 @@ const links = [
   <nav class="flex gap-5 h-8 items-center">
     {
       links.map((link) => (
-        <a href={link.url} class="underline hover:text-accent">
+        <a href={link.url} class="underline hover:text-page">
           {link.title}
         </a>
       ))
     }
   </nav>
-  <div
-    class="flex gap-1 [&>button]:text-primary-foreground [&>button]:bg-primary"
-  >
-    <button class="size-8 flex items-center justify-center hidden">
+  <div class="flex gap-1">
+    <button class="size-8 items-center justify-center hidden">
       <LanguageSvg class="size-4" />
     </button>
-    <button id="theme-toggle" class="size-8 flex items-center justify-center">
+    <button
+      id="theme-toggle"
+      class="size-8 flex items-center justify-center hover:bg-primary/10 cursor-pointer"
+    >
       <SunSvg class="size-4 block dark:hidden" />
-      <MoonSvg class="size-4 dark:block hidden" />
+      <MoonSvg class="size-3.5 dark:block hidden" />
     </button>
   </div>
 </header>

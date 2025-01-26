@@ -61,11 +61,10 @@ export class LiveVisitors extends DurableObject {
 		const [client, server] = Object.values(webSocketPair);
 		this.ctx.acceptWebSocket(server);
 		this.broadcast(`${this.ctx.getWebSockets().length}`);
-		(await this.ctx.storage.getAlarm()) ?? this.ctx.storage.setAlarm(Date.now() + 1000 * 5);
-		this.ctx.waitUntil(
-			// new Promise((r) => setTimeout(r, 7000)).then(() => this.broadcast(`${Math.floor(Math.random() * (300 - 200 + 1)) + 200}`)),
-			new Promise((r) => setTimeout(r, 7000)).then(() => this.broadcast(`${Math.floor(Math.random() * (500 - 10 + 1)) + 10}`)),
-		);
+		// (await this.ctx.storage.getAlarm()) ?? this.ctx.storage.setAlarm(Date.now() + 1000 * 5);
+		// this.ctx.waitUntil(
+		// 	new Promise((r) => setTimeout(r, 7000)).then(() => this.broadcast(`${Math.floor(Math.random() * (500 - 10 + 1)) + 10}`)),
+		// );
 
 		return new Response(null, {
 			status: 101,
