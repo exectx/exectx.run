@@ -38,9 +38,7 @@ const digits = initialNumber.toString().split("");
     const updateCounter = throttle((value: string) => {
       onCounterUpdate(value);
     }, 800);
-    ws.onmessage = (messageEvent) => (
-      console.log(messageEvent.data, "<- ws"), updateCounter(messageEvent.data)
-    );
+    ws.onmessage = (messageEvent) => updateCounter(messageEvent.data);
     ws.onerror = (error) => {
       console.error("WebSocket error", error);
     };
@@ -120,15 +118,10 @@ const digits = initialNumber.toString().split("");
       .map((child, idx) => {
         const wheel = $("[data-wheel]", child as HTMLElement)!;
         const multidigit = wheel.style.getPropertyValue("--digit");
-        console.log(
-          `0) multidigit[${idx}] = ${multidigit}, digit (${mod(+multidigit, 10)})`,
-        );
-        // const digit = +multidigit % 10;
         const digit = mod(+multidigit, 10);
         return digit;
       })
       .join("");
-    console.log(`0) digits -> ${digits}`);
     return +digits;
   }
 
@@ -147,9 +140,6 @@ const digits = initialNumber.toString().split("");
 
     const targetValues = value.padStart(maxIncomingCounterDigitsLength, "0");
     const difference = +value - currentDisplayedValue;
-    console.log(
-      `animate: [${currentDisplayedValue}],<${counter}> -> ${+value}, (${difference > 0 ? "+" : ""}${difference})`,
-    );
 
     if (difference === 0) return;
 
@@ -173,9 +163,6 @@ const digits = initialNumber.toString().split("");
         remainder,
         targetDigit,
         unit,
-      );
-      console.log(
-        `+/-) multidigit[${idx}] = ${currentMultiDigit} ${moveBy > 0 ? "+" : "-"} ${Math.abs(moveBy)} -> t(${targetDigit}) a(${currentMultiDigit + moveBy})`,
       );
 
       let inTimeOut = false;
