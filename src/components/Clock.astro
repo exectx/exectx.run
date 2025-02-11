@@ -23,20 +23,7 @@ const baseTransitionDuration = 800;
     seconds: DigitElements;
   };
 
-  const clockEl = {
-    hours: {
-      tens: $("[data-hours] [data-tens]")!,
-      ones: $("[data-hours] [data-ones]")!,
-    },
-    minutes: {
-      tens: $("[data-minutes] [data-tens]")!,
-      ones: $("[data-minutes] [data-ones]")!,
-    },
-    seconds: {
-      tens: $("[data-seconds] [data-tens]")!,
-      ones: $("[data-seconds] [data-ones]")!,
-    },
-  } satisfies ClockElements;
+  let clockEl: ClockElements;
 
   function getTimeDigits(date: Date): TimeDigits {
     const hours = date.getHours().toString().padStart(2, "0");
@@ -132,10 +119,31 @@ const baseTransitionDuration = 800;
     }, 100);
   }
 
-  startClock();
+  function initClock() {
+    const parentEl = $("[data-clock]");
+    if (!parentEl) return;
+
+    clockEl = {
+      hours: {
+        tens: $("[data-hours] [data-tens]", parentEl)!,
+        ones: $("[data-hours] [data-ones]", parentEl)!,
+      },
+      minutes: {
+        tens: $("[data-minutes] [data-tens]", parentEl)!,
+        ones: $("[data-minutes] [data-ones]", parentEl)!,
+      },
+      seconds: {
+        tens: $("[data-seconds] [data-tens]", parentEl)!,
+        ones: $("[data-seconds] [data-ones]", parentEl)!,
+      },
+    } satisfies ClockElements;
+    startClock();
+  }
+
+  document.addEventListener("astro:page-load", initClock);
 </script>
 
-<div class="relative inline-flex items-center">
+<div data-clock class="relative inline-flex items-center">
   <div
     class="absolute pointer-events-none top-0 w-full h-2 bg-gradient-to-b from-background to-transparent z-10"
   >

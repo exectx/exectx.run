@@ -10,11 +10,26 @@ const digits = initialNumber.toString().split("");
   import { $ } from "@/lib/dom";
   import { throttle } from "@/lib/throttle";
 
-  const group = $("#live-counter")!;
-  const counterText = getInitialDigits();
-  let counter = +counterText;
-  let maxIncomingCounterDigitsLength = counterText.length;
-  initWebSocket();
+  let ws: WebSocket | null = null;
+  let group: HTMLElement;
+  // let group = $("#live-counter")!;
+  let counterText: string;
+  let counter: number;
+  let maxIncomingCounterDigitsLength: number;
+  // initWebSocket();
+
+  document.addEventListener("astro:page-load", () => {
+    group = $("#live-counter")!;
+    if (!group) {
+      if (ws) ws.close();
+      return;
+    }
+    counterText = getInitialDigits();
+    counter = +counterText;
+    maxIncomingCounterDigitsLength = counterText.length;
+    if (ws) ws.close();
+    ws = initWebSocket();
+  });
 
   function getInitialDigits() {
     const initialDigits = Array.from(group.children || [])
@@ -34,11 +49,16 @@ const digits = initialNumber.toString().split("");
     const ws = new WebSocket(
       `${wsProtocol}://${import.meta.env.PUBLIC_WS_HOST}/ws/live-visitors`,
     );
-    ws.onopen = () => ws.send("get");
+    ws.onopen = () => {
+      console.log("opened ws connection");
+      ws.send("get");
+    };
     const updateCounter = throttle((value: string) => {
       onCounterUpdate(value);
     }, 800);
-    ws.onmessage = (messageEvent) => updateCounter(messageEvent.data);
+    ws.onmessage = (messageEvent) => {
+      updateCounter(messageEvent.data);
+    };
     ws.onerror = (error) => {
       console.error("WebSocket error", error);
     };

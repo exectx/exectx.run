@@ -1,10 +1,11 @@
 ---
-export const prerender = true;
+// export const prerender = true;
 
 import Layout from "@/layouts/Layout.astro";
 import ArrowSvg from "@/assets/arrow-up-right.svg";
 import AnimatedClock from "@/components/Clock.astro";
 import SliderGrid from "@/components/SliderGrid.astro";
+import Globe from "@/components/Globe.astro";
 ---
 
 <script>
@@ -32,76 +33,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
     clockContainerEl.textContent = `I'm ${hoursDiff} of you`;
   }
 
-  const canvas = document.getElementById("globe") as HTMLCanvasElement;
-  const ctx = canvas.getContext("2d")!;
-
-  let width: number, height: number;
-  let lastTimestamp = 0;
-  const frameInterval = 24;
-
-  function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    width = canvas.width = 64 * dpr;
-    height = canvas.height = 64 * dpr;
-    canvas.style.width = `${64}px`;
-    canvas.style.height = `${64}px`;
-    ctx.scale(dpr, dpr);
-  }
-
-  let mainColor = getComputedStyle(canvas).color;
-
-  new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.attributeName !== "class") return;
-      mainColor = getComputedStyle(canvas).color;
-    });
-  }).observe(document.documentElement, { attributes: true });
-
-  function drawGlobe(timestamp: number) {
-    if (timestamp - lastTimestamp < frameInterval) {
-      requestAnimationFrame(drawGlobe);
-      return;
-    }
-    lastTimestamp = timestamp;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.strokeStyle = mainColor;
-    ctx.lineWidth = 1;
-
-    // Scale factor to match 64px container while preserving 42px viewBox proportions
-    const scale = 64 / 42;
-
-    ctx.save();
-    ctx.translate(30 * scale, 21 * scale);
-    ctx.scale(scale, scale);
-
-    // Draw rotating ellipses
-    const progress = (timestamp % 10000) / 10000;
-    for (let i = 0; i < 4; i++) {
-      const ellipseProgress = (progress + i / 4) % 1;
-      const radiusY = 19.5 * Math.abs(Math.cos(ellipseProgress * Math.PI));
-      let startAngle, endAngle;
-
-      if (ellipseProgress < 0.5) {
-        startAngle = Math.PI / 2;
-        endAngle = (3 * Math.PI) / 2;
-      } else {
-        startAngle = (3 * Math.PI) / 2;
-        endAngle = Math.PI / 2;
-      }
-
-      ctx.beginPath();
-      ctx.ellipse(-10.5, 0, radiusY, 19.5, 0, startAngle, endAngle);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-    requestAnimationFrame(drawGlobe);
-  }
-
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
-  requestAnimationFrame(drawGlobe);
+  // });
 </script>
 
 <Layout>
@@ -109,15 +41,7 @@ import SliderGrid from "@/components/SliderGrid.astro";
     <section class="pt-4 flex flex-col gap-10">
       <div class="grid place-items-center gap-4">
         <h1 class="text-4xl font-mono">~/exectx</h1>
-        <div class="globe-container">
-          <canvas id="globe" width="64" height="64"></canvas>
-          <svg class="size-16" viewBox="0 0 41 42" fill="none">
-            <circle cx="19.5" cy="21" r="19.5" stroke="currentColor"></circle>
-            <path d="M3.5 9.75 35 9.75" stroke="currentColor"></path>
-            <path d="M0 21 39 21" stroke="currentColor"></path>
-            <path d="M3 32 35 32.5" stroke="currentColor"></path>
-          </svg>
-        </div>
+        <Globe />
       </div>
 
       <div
@@ -207,15 +131,6 @@ import SliderGrid from "@/components/SliderGrid.astro";
 </Layout>
 
 <style>
-  .grid-section {
-    margin-top: 5rem;
-  }
-  @media (min-width: 768px) {
-    .grid-section {
-      margin-top: 7rem;
-    }
-  }
-
   .dashed-divider {
     position: absolute;
     left: 0;
@@ -228,18 +143,5 @@ import SliderGrid from "@/components/SliderGrid.astro";
       transparent 4px,
       transparent 10px
     );
-  }
-  .globe-container {
-    position: relative;
-    width: 64px;
-    height: 64px;
-    color: var(--color-foreground);
-    overflow: visible;
-  }
-  canvas {
-    position: absolute;
-    left: 0.8px;
-    height: 100%;
-    aspect-ratio: 128 / 128;
   }
 </style>

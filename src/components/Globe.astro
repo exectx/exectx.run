@@ -1,0 +1,105 @@
+<script>
+  import { $ } from "@/lib/dom";
+
+  let width: number, height: number;
+  let lastTimestamp = 0;
+  let canvas: HTMLCanvasElement;
+  let mainColor: string;
+  let ctx: CanvasRenderingContext2D;
+  let mutObserver: MutationObserver;
+  const frameInterval = 24;
+
+  document.addEventListener("astro:page-load", initializeGlobeAnimation);
+  document.addEventListener("astro:before-swap", () => {
+    mutObserver?.disconnect();
+  });
+
+  function initializeGlobeAnimation() {
+    // @ts-ignore
+    canvas = $("#globe") satisfies HTMLCanvasElement | null;
+    if (!canvas) return;
+    ctx = canvas.getContext("2d")!;
+    mainColor = getComputedStyle(canvas).color;
+    mutObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName !== "class") return;
+        mainColor = getComputedStyle(canvas).color;
+      });
+    });
+    mutObserver.observe(document.documentElement, { attributes: true });
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    requestAnimationFrame(drawGlobe);
+  }
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    width = canvas.width = 64 * dpr;
+    height = canvas.height = 64 * dpr;
+    canvas.style.width = `${64}px`;
+    canvas.style.height = `${64}px`;
+    ctx.scale(dpr, dpr);
+  }
+
+  function drawGlobe(timestamp: number) {
+    if (timestamp - lastTimestamp < frameInterval) {
+      requestAnimationFrame(drawGlobe);
+      return;
+    }
+    lastTimestamp = timestamp;
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = mainColor;
+    ctx.lineWidth = 1;
+    // Scale factor to match 64px container while preserving 42px viewBox proportions
+    const scale = 64 / 42;
+    ctx.save();
+    ctx.translate(30 * scale, 21 * scale);
+    ctx.scale(scale, scale);
+    // Draw rotating ellipses
+    const progress = (timestamp % 10000) / 10000;
+    for (let i = 0; i < 4; i++) {
+      const ellipseProgress = (progress + i / 4) % 1;
+      const radiusY = 19.5 * Math.abs(Math.cos(ellipseProgress * Math.PI));
+      let startAngle, endAngle;
+      if (ellipseProgress < 0.5) {
+        startAngle = Math.PI / 2;
+        endAngle = (3 * Math.PI) / 2;
+      } else {
+        startAngle = (3 * Math.PI) / 2;
+        endAngle = Math.PI / 2;
+      }
+      ctx.beginPath();
+      ctx.ellipse(-10.5, 0, radiusY, 19.5, 0, startAngle, endAngle);
+      ctx.stroke();
+    }
+    ctx.restore();
+    requestAnimationFrame(drawGlobe);
+  }
+</script>
+
+<div id="globe-container">
+  <canvas id="globe" width="64" height="64"></canvas>
+  <svg class="size-16" viewBox="0 0 41 42" fill="none">
+    <circle cx="19.5" cy="21" r="19.5" stroke="currentColor"></circle>
+    <path d="M3.5 9.75 35 9.75" stroke="currentColor"></path>
+    <path d="M0 21 39 21" stroke="currentColor"></path>
+    <path d="M3 32 35 32.5" stroke="currentColor"></path>
+  </svg>
+</div>
+
+<style>
+  #globe-container {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    color: var(--color-foreground);
+    overflow: visible;
+  }
+  canvas {
+    position: absolute;
+    left: 0.8px;
+    height: 100%;
+    aspect-ratio: 128 / 128;
+  }
+</style>

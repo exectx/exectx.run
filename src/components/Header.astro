@@ -20,7 +20,6 @@ const links = [
 
 <script>
   import { $ } from "@/lib/dom";
-  const themeButton = $("#theme-toggle") as HTMLButtonElement;
 
   function getTheme() {
     const hasUserTheme = localStorage.getItem("user-theme");
@@ -65,7 +64,10 @@ const links = [
       document.documentElement.classList.add(updatedOsTheme);
     });
 
-  themeButton.addEventListener("click", toggleTheme);
+  document.addEventListener("astro:page-load", () => {
+    const themeButton = $("#theme-toggle") as HTMLButtonElement;
+    themeButton.addEventListener("click", toggleTheme);
+  });
 </script>
 
 <header class="py-8 px-4 w-full max-w-[80ch] mx-auto flex justify-between">
