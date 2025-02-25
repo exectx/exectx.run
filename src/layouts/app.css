@@ -7,6 +7,8 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-roboto: "Roboto", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
   --animate-ping-2: ping-2 2s cubic-bezier(0, 0, 0.2, 1) infinite;
   --color-page: light-dark(oklch(0.69 0.24 268), oklch(0.89 0.34 268));

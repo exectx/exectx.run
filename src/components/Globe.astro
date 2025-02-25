@@ -3,15 +3,24 @@
 
   let width: number, height: number;
   let lastTimestamp = 0;
-  let canvas: HTMLCanvasElement;
+  let canvas: HTMLCanvasElement | null;
   let mainColor: string;
   let ctx: CanvasRenderingContext2D;
-  let mutObserver: MutationObserver;
+  let mutObserver: MutationObserver | null;
   const frameInterval = 24;
 
+  // Initialize immediately on script load instead of waiting for astro:page-load
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeGlobeAnimation);
+  } else {
+    initializeGlobeAnimation();
+  }
+
+  // Also keep the astro:page-load listener for client-side navigation
   document.addEventListener("astro:page-load", initializeGlobeAnimation);
   document.addEventListener("astro:before-swap", () => {
     mutObserver?.disconnect();
+    mutObserver ??= null;
   });
 
   function initializeGlobeAnimation() {
@@ -22,7 +31,7 @@
     mainColor = getComputedStyle(canvas).color;
     mutObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName !== "class") return;
+        if (mutation.attributeName !== "class" || !canvas) return;
         mainColor = getComputedStyle(canvas).color;
       });
     });
@@ -30,16 +39,55 @@
 
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
+
+    // // Start animation with an initial frame to avoid delay
+    drawInitialFrame();
     requestAnimationFrame(drawGlobe);
   }
 
   function resizeCanvas() {
+    if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
     width = canvas.width = 64 * dpr;
     height = canvas.height = 64 * dpr;
     canvas.style.width = `${64}px`;
     canvas.style.height = `${64}px`;
     ctx.scale(dpr, dpr);
+  }
+
+  // Draw an initial frame immediately to avoid the 1-second delay
+  function drawInitialFrame() {
+    if (!ctx) return;
+
+    // Use a simulated timestamp to start the animation
+    const simulatedTimestamp = performance.now();
+    lastTimestamp = simulatedTimestamp;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = mainColor;
+    ctx.lineWidth = 1;
+    const scale = 64 / 42;
+    ctx.save();
+    ctx.translate(30 * scale, 21 * scale);
+    ctx.scale(scale, scale);
+
+    // Draw initial state of the rotating ellipses
+    for (let i = 0; i < 4; i++) {
+      const ellipseProgress = (i / 4) % 1;
+      const radiusY = 19.5 * Math.abs(Math.cos(ellipseProgress * Math.PI));
+      let startAngle, endAngle;
+      if (ellipseProgress < 0.5) {
+        startAngle = Math.PI / 2;
+        endAngle = (3 * Math.PI) / 2;
+      } else {
+        startAngle = (3 * Math.PI) / 2;
+        endAngle = Math.PI / 2;
+      }
+      ctx.beginPath();
+      ctx.ellipse(-10.5, 0, radiusY, 19.5, 0, startAngle, endAngle);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawGlobe(timestamp: number) {

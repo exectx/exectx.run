@@ -1,5 +1,5 @@
-import { DurableObject } from 'cloudflare:workers';
-import { Hono } from 'hono';
+import { DurableObject } from "cloudflare:workers";
+import { Hono } from "hono";
 
 export class LiveVisitors extends DurableObject {
 	constructor(ctx: DurableObjectState, env: Env) {
@@ -18,26 +18,29 @@ export class LiveVisitors extends DurableObject {
 		ws.close();
 	}
 
-	async webSocketMessage(ws: WebSocket, _message: string | ArrayBuffer): Promise<void> {
+	async webSocketMessage(
+		ws: WebSocket,
+		_message: string | ArrayBuffer,
+	): Promise<void> {
 		ws.send(`${this.ctx.getWebSockets().length}`);
 	}
 
 	async printState(ws: WebSocket) {
 		switch (ws.readyState) {
 			case WebSocket.CONNECTING:
-				console.log('CONNECTING');
+				console.log("CONNECTING");
 				break;
 			case WebSocket.OPEN:
-				console.log('OPEN');
+				console.log("OPEN");
 				break;
 			case WebSocket.CLOSING:
-				console.log('CLOSING');
+				console.log("CLOSING");
 				break;
 			case WebSocket.CLOSED:
-				console.log('CLOSED');
+				console.log("CLOSED");
 				break;
 			default:
-				console.log('UNKNOWN');
+				console.log("UNKNOWN");
 				break;
 		}
 	}
@@ -75,13 +78,13 @@ export class LiveVisitors extends DurableObject {
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get('/ws/live-visitors', (c) => {
-	const upgrade = c.req.header('Upgrade');
-	if (upgrade !== 'websocket') {
+app.get("/ws/live-visitors", (c) => {
+	const upgrade = c.req.header("Upgrade");
+	if (upgrade !== "websocket") {
 		c.status(426);
-		return c.body('Durable Object expected Upgrade: websocket');
+		return c.body("Durable Object expected Upgrade: websocket");
 	}
-	const id = c.env.LIVE_VISITORS.idFromName('live-visitors');
+	const id = c.env.LIVE_VISITORS.idFromName("live-visitors");
 	const socket = c.env.LIVE_VISITORS.get(id);
 	return socket.fetch(c.req.raw);
 });

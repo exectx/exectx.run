@@ -1,19 +1,19 @@
 {
-  "name": "worker",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev",
-    "cf-typegen": "wrangler types"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250204.0",
-    "typescript": "^5.7.3",
-    "wrangler": "^3.107.3"
-  },
-  "dependencies": {
-    "hono": "^4.6.20"
-  }
+	"name": "worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250204.0",
+		"typescript": "^5.7.3",
+		"wrangler": "^3.107.3"
+	},
+	"dependencies": {
+		"hono": "^4.6.20"
+	}
 }

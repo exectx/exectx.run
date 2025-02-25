@@ -22,3 +22,10 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+.aider*
+
+# wrangler
+.wrangler
+
+# AI
+CLAUDE.md
