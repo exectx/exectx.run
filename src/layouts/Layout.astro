@@ -1,5 +1,7 @@
 ---
-import "./app.css";
+import stylesheet from "./app.css?url";
+import fontMono from "../assets/ibmplexmono.woff2?url"
+import fontSans from "../assets/ibmplexsans.woff2?url"
 import { ClientRouter } from "astro:transitions";
 import Header from "@/components/Header.astro";
 interface Props {
@@ -13,20 +15,12 @@ const { title = "exectx.run" } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
-    <ClientRouter />
-    <title>{title}</title>
-    {
-      import.meta.env.DEV && (
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-      )
-    }
-    {
-      import.meta.env.DEV && (
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      )
-    }
+    <link rel="preload" href={fontMono} as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href={fontSans} as="font" type="font/woff2" crossorigin="anonymous" />
+    <link rel="preload" href={stylesheet} as="style" crossorigin="anonymous" />
+    <link rel="stylesheet" href={stylesheet} crossorigin="anonymous" />
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
       rel="stylesheet"
@@ -34,7 +28,11 @@ const { title = "exectx.run" } = Astro.props;
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans&display=swap"
       rel="stylesheet"
-    />
+    /> -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <ClientRouter />
+    <title>{title}</title>
   </head>
   <body class="tabular-nums">
     <div id="noise-mask">
