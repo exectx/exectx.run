@@ -11,29 +11,30 @@ import Globe from "@/components/Globe.astro";
 <script>
   import { $ } from "@/lib/dom";
 
-  const metaList = $("#meta-info")!;
-  const timeDiffEl = $("#time-diff", metaList)!;
-  const clockContainerEl = $("[data-tooltip-timezone]", metaList)!;
-
-  const clientNow = new Date();
-  // Get client's timezone offset in hours (e.g., UTC+3 → 3)
-  const clientOffsetHours = -clientNow.getTimezoneOffset() / 60;
-  const siteOffset = -5;
   // Calculate how much (GMT-5) is ahead/behind the CLIENT
-  const diffHours = siteOffset - clientOffsetHours;
-  if (diffHours === 0) {
-    timeDiffEl.textContent = "same time";
-    clockContainerEl.textContent = "We're in the same timezone!";
-  } else {
-    const hoursText = Math.abs(diffHours) === 1 ? "hour" : "hours";
-    const hoursDiff = `${Math.abs(diffHours)} ${hoursText} ${
-      diffHours > 0 ? "ahead" : "behind"
-    }`;
-    timeDiffEl.textContent = hoursDiff;
-    clockContainerEl.textContent = `I'm ${hoursDiff} of you`;
-  }
+  document.addEventListener("astro:page-load", () => {
+    const metaList = $("#meta-info");
+    if (!metaList) return;
+    const timeDiffEl = $("#time-diff", metaList)!;
+    const clockContainerEl = $("[data-tooltip-timezone]", metaList)!;
 
-  // });
+    const clientNow = new Date();
+    // Get client's timezone offset in hours (e.g., UTC+3 → 3)
+    const clientOffsetHours = -clientNow.getTimezoneOffset() / 60;
+    const siteOffset = -5;
+    const diffHours = siteOffset - clientOffsetHours;
+    if (diffHours === 0) {
+      timeDiffEl.textContent = "same time";
+      clockContainerEl.textContent = "We're in the same timezone!";
+    } else {
+      const hoursText = Math.abs(diffHours) === 1 ? "hour" : "hours";
+      const hoursDiff = `${Math.abs(diffHours)} ${hoursText} ${
+        diffHours > 0 ? "ahead" : "behind"
+      }`;
+      timeDiffEl.textContent = hoursDiff;
+      clockContainerEl.textContent = `I'm ${hoursDiff} of you`;
+    }
+  });
 </script>
 
 <Layout>
